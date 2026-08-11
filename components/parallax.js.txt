@@ -1,0 +1,25 @@
+'use client';
+
+import { motion, useScroll, useTransform } from 'motion/react';
+import { useRef } from 'react';
+
+export default function Parallax({ children, offset = 50, className = '' }) {
+  const ref = useRef(null);
+
+  // Track the scroll position of this container
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start end', 'end start'],
+  });
+
+  // Calculate vertical motion based on scroll
+  const y = useTransform(scrollYProgress, [0, 1], [-offset, offset]);
+
+  return (
+    <div ref={ref} className={`relative overflow-hidden ${className}`}>
+      <motion.div style={{ y }}>
+        {children}
+      </motion.div>
+    </div>
+  );
+}

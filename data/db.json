@@ -1,0 +1,125 @@
+{
+  "categories": ["Event", "Party", "Pre-Wedding", "Pre-graduation", "Documentary", "Products"],
+  "videoCategories": ["Corporate Video", "Shortfilm"],
+  "albums": [
+    {
+      "id": "horng-seanglim",
+      "title": "Horng & Seanglim",
+      "category": "Pre-Wedding",
+      "folderPath": "pre-wedding/album-horng-seanglim"
+    },
+    {
+      "id": "layhok-sathea",
+      "title": "Layhok & Sathea",
+      "category": "Pre-Wedding",
+      "folderPath": "pre-wedding/album-layhok-sathea"
+    },
+    {
+      "id": "maran-sreypov",
+      "title": "Maran & Sreypov",
+      "category": "Pre-Wedding",
+      "folderPath": "pre-wedding/album-maran-sreypov"
+    },
+    {
+      "id": "ratanak-meily",
+      "title": "Ratanak & Meily",
+      "category": "Pre-Wedding",
+      "folderPath": "pre-wedding/album-ratanak-meily"
+    },
+    {
+      "id": "spheaktra-mey",
+      "title": "Spheaktra & Mey",
+      "category": "Pre-Wedding",
+      "folderPath": "pre-wedding/album-spheaktra-mey"
+    },
+    {
+      "id": "gas-station-launch",
+      "title": "Gas Station Launching",
+      "category": "Event",
+      "folderPath": "events/album-gas station lauching"
+    },
+    {
+      "id": "shunde-event",
+      "title": "Shunde Event",
+      "category": "Event",
+      "folderPath": "events/album-shunde event"
+    },
+    {
+      "id": "birthday-party-album",
+      "title": "Birthday Celebration",
+      "category": "Party",
+      "folderPath": "party/album-birthday"
+    }
+  ],
+  "videos": [
+    {
+      "id": "corporate-video-1",
+      "title": "Corporate Project I",
+      "category": "Corporate Video",
+      "videoUrl": "https://www.youtube.com/watch?v=QXndgLl2nTY",
+      "youtubeId": "PfKfarXTfQA",
+      "description": "Premium corporate video project."
+    },
+    {
+      "id": "corporate-video-2",
+      "title": "Corporate Project II",
+      "category": "Corporate Video",
+      "videoUrl": "https://www.youtube.com/watch?v=PfKfarXTfQA",
+      "youtubeId": "8W47x9Pa_RE",
+      "description": "Professional campaign highlight."
+    },
+    {
+      "id": "corporate-video-3",
+      "title": "Corporate Project III",
+      "category": "Corporate Video",
+      "videoUrl": "https://www.youtube.com/watch?v=8W47x9Pa_RE",
+      "youtubeId": "QXndgLl2nTY",
+      "description": "Commercial showcase project."
+    },
+    {
+      "id": "shortfilm-youtube-1",
+      "title": "Cinematic Short Film",
+      "category": "Shortfilm",
+      "videoUrl": "https://www.youtube.com/watch?v=u0Q9IvdKVxA",
+      "youtubeId": "DBUTN_vm400",
+      "description": "Narrative storytelling short film project."
+    },
+    {
+      "id": "facebook-reel-corp-1",
+      "title": "Corporate Showcase Reel A",
+      "category": "Corporate Video",
+      "videoUrl": "https://facebook.com",
+      "thumbnail": "/uploads/video-thumbnail/facebook-thumbnail-01.jpg?v=1",
+      "isFacebook": true,
+      "description": "Watch this project highlight directly on Facebook."
+    },
+    {
+      "id": "facebook-reel-corp-2",
+      "title": "Corporate Showcase Reel B",
+      "category": "Corporate Video",
+      "videoUrl": "https://facebook.com",
+      "thumbnail": "/uploads/video-thumbnail/facebook-thumbnail-02.jpg",
+      "isFacebook": false,
+      "description": "Watch this layout directly on Facebook."
+    },
+    {
+      "id": "facebook-reel-short-1",
+      "title": "Creative Short Film Reel",
+      "category": "Shortfilm",
+      "videoUrl": "https://facebook.com",
+      "thumbnail": "/uploads/video-thumbnail/facebook-thumbnail-03.jpg",
+      "isFacebook": false,
+      "description": "Watch this cinematic snippet directly on Facebook."
+    },
+    {
+      "id": "facebook-video-short-2",
+      "title": "Featured Creative Production",
+      "category": "Shortfilm",
+      "videoUrl": "https://facebook.com",
+      "thumbnail": "/uploads/video-thumbnail/facebook-thumbnail-04.jpg",
+      "isFacebook": false,
+      "description": "Watch this presentation overview directly on Facebook."
+    }
+  ],
+  "clients": []
+}
