@@ -4,11 +4,11 @@ import Footer from '../components/Footer';
 import PageTransition from '../components/PageTransition';
 import SmoothScroll from '../components/SmoothScroll';
 
-// This site's content lives in a JSON file edited through /admin, not a
-// real database — Next.js can't know that file changes, so without this
-// it would cache pages at build time and admin edits wouldn't show up
-// until a rebuild. This forces every page to render fresh per request.
+// Content is edited live through /admin, so every page must render fresh on
+// each visit — never from a cached copy — or admin edits wouldn't show up.
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export const metadata = {
   title: 'Houn Kimhea — Photography & Videography',
