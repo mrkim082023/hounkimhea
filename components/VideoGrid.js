@@ -1,121 +1,198 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import Reveal from './Reveal';
+import FadeImage from './FadeImage';
+import { lockScroll } from './SmoothScroll';
+import Portal from './Portal';
+import { embedUrl, videoKind, videoThumbnail } from '../lib/video';
 
-function toEmbedUrl(url) {
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes('youtube.com') || u.hostname === 'youtu.be') {
-      const id = u.hostname === 'youtu.be' ? u.pathname.slice(1) : u.searchParams.get('v');
-      return id ? `https://www.youtube.com/embed/${id}?autoplay=1` : url;
-    }
-    if (u.hostname.includes('vimeo.com')) {
-      const id = u.pathname.split('/').filter(Boolean).pop();
-      return id ? `https://player.vimeo.com/video/${id}?autoplay=1` : url;
-    }
-    if (u.hostname.includes('facebook.com') || u.hostname === 'fb.watch') {
-      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
-        url
-      )}&show_text=0&autoplay=1`;
-    }
-  } catch {
-    return url;
-  }
-  return url;
+function YouTubeFallbackImage({ src, alt }) {
+  // maxresdefault doesn't exist for every YouTube video; fall back to hqdefault.
+  const [s, setS] = useState(src);
+  return (
+    <img
+      src={s}
+      alt=""
+      loading="lazy"
+      onError={() => s.includes('maxresdefault') && setS(s.replace('maxresdefault', 'hqdefault'))}
+      className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-silk group-hover:scale-[1.06]"
+    />
+  );
 }
 
-function isDirectVideo(url) {
-  return /\.(mp4|webm|mov)$/i.test(url);
-}
-
-export default function VideoGrid({ videos }) {
+export default function VideoGrid({ videos, categories = [], showFilters = false }) {
+  const [filter, setFilter] = useState('All');
   const [active, setActive] = useState(null);
 
+  const shown = useMemo(
+    () => (filter === 'All' ? videos : videos.filter((v) => v.category === filter)),
+    [videos, filter]
+  );
+
+  useEffect(() => {
+    if (!active) return;
+    lockScroll(true);
+    const onKey = (e) => e.key === 'Escape' && setActive(null);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      lockScroll(false);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [active]);
+
   if (!videos.length) {
-    return (
-      <div className="py-24 text-center">
-        <p className="font-display text-2xl text-bone/40">No films published yet.</p>
-      </div>
-    );
+    return <p className="font-display text-2xl text-bone/40 py-16 text-center">No films published yet.</p>;
   }
+
+  const tabs = ['All', ...categories.filter((c) => videos.some((v) => v.category === c))];
 
   return (
     <>
-      <div className="grid sm:grid-cols-2 gap-8">
-        {videos.map((video, i) => (
-          <Reveal key={video.id} delay={(i % 6) * 0.08}>
+      {showFilters && tabs.length > 2 && (
+        <div className="flex flex-wrap gap-2 mb-12">
+          {tabs.map((t) => (
             <button
-              onClick={() => setActive(video)}
-              className="group relative block w-full overflow-hidden rounded-sm aspect-video bg-ink-800 text-left"
+              key={t}
+              onClick={() => setFilter(t)}
+              className={`relative px-5 py-2.5 text-[12px] tracking-widest uppercase rounded-full transition-colors duration-300 ${
+                filter === t ? 'text-ink-950' : 'text-bone/60 hover:text-bone'
+              }`}
             >
-              {video.thumbnail ? (
-                <img
-                  src={video.thumbnail}
-                  alt={video.title}
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-silk group-hover:scale-105"
+              {filter === t && (
+                <motion.span
+                  layoutId="video-filter"
+                  transition={{ type: 'spring', stiffness: 400, damping: 34 }}
+                  className="absolute inset-0 rounded-full bg-gold-400"
                 />
-              ) : (
-                <div className="absolute inset-0 grain" />
               )}
-              <div className="absolute inset-0 bg-ink-950/40 group-hover:bg-ink-950/25 transition-colors duration-400 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border border-gold-300/70 flex items-center justify-center backdrop-blur-sm bg-ink-950/30 group-hover:scale-110 transition-transform duration-400 ease-silk">
-                  <div className="w-0 h-0 border-y-[8px] border-y-transparent border-l-[13px] border-l-gold-300 ml-1" />
-                </div>
-              </div>
-              <div className="absolute left-5 bottom-5 right-5">
-                {video.category && (
-                  <p className="text-[10px] tracking-widest2 uppercase text-gold-300/80">
-                    {video.category}
-                  </p>
-                )}
-                <p className="font-display text-xl text-bone mt-1">{video.title}</p>
-              </div>
+              <span className="relative">{t}</span>
             </button>
-          </Reveal>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
+      <motion.div layout className="grid sm:grid-cols-2 gap-6 md:gap-8">
+        <AnimatePresence mode="popLayout">
+          {shown.map((video, i) => {
+            const thumb = videoThumbnail(video);
+            return (
+              <motion.button
+                layout
+                key={video.id}
+                type="button"
+                onClick={() => setActive(video)}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.8, delay: (i % 2) * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="group relative block w-full overflow-hidden rounded-sm aspect-video bg-ink-800 text-left"
+              >
+                {thumb ? (
+                  thumb.includes('img.youtube.com') ? (
+                    <YouTubeFallbackImage src={thumb} alt={video.title} />
+                  ) : (
+                    <FadeImage
+                      src={thumb}
+                      alt={video.title}
+                      width={1080}
+                      className="absolute inset-0"
+                      imgClassName="w-full h-full object-cover group-hover:scale-[1.06] !duration-[1200ms]"
+                    />
+                  )
+                ) : (
+                  <div className="absolute inset-0 grain" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/30 to-ink-950/10 group-hover:via-ink-950/10 transition-all duration-700" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border border-gold-300/70 bg-ink-950/30 backdrop-blur-sm flex items-center justify-center transition-all duration-500 ease-silk group-hover:scale-110 group-hover:bg-gold-400 group-hover:border-gold-400">
+                    <span className="absolute inset-0 rounded-full border border-gold-300/50 animate-ping opacity-0 group-hover:opacity-60" />
+                    <span className="w-0 h-0 border-y-[9px] border-y-transparent border-l-[15px] border-l-gold-300 group-hover:border-l-ink-950 ml-1 transition-colors duration-500" />
+                  </span>
+                </div>
+                <div className="absolute left-5 right-5 bottom-5 translate-y-1 group-hover:translate-y-0 transition-transform duration-700 ease-silk">
+                  {video.category && (
+                    <p className="text-[10px] tracking-widest2 uppercase text-gold-300/80">{video.category}</p>
+                  )}
+                  <p className="font-display text-2xl text-bone mt-1 leading-tight">{video.title}</p>
+                  {video.description && (
+                    <p className="text-xs text-bone/50 mt-1 line-clamp-1">{video.description}</p>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
+
+      <Portal>
       <AnimatePresence>
         {active && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.35 }}
             className="fixed inset-0 z-[100] bg-ink-950/95 backdrop-blur-sm flex items-center justify-center px-4"
             onClick={() => setActive(null)}
           >
             <button
               aria-label="Close"
               onClick={() => setActive(null)}
-              className="absolute top-6 right-6 text-bone/70 hover:text-gold-300 text-3xl font-display"
+              className="absolute top-5 right-5 w-11 h-11 rounded-full border border-ink-600 text-bone/70 hover:border-gold-400 hover:text-gold-300 transition-colors text-2xl leading-none"
             >
               &times;
             </button>
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.94, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-4xl aspect-video bg-black"
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-5xl"
               onClick={(e) => e.stopPropagation()}
             >
-              {isDirectVideo(active.videoUrl) ? (
-                <video src={active.videoUrl} controls autoPlay className="w-full h-full" />
-              ) : (
-                <iframe
-                  src={toEmbedUrl(active.videoUrl)}
-                  className="w-full h-full"
-                  allow="autoplay; fullscreen; picture-in-picture"
-                  allowFullScreen
-                />
-              )}
+              <div className="aspect-video bg-black rounded-sm overflow-hidden shadow-2xl">
+                {videoKind(active.videoUrl) === 'file' ? (
+                  <video src={active.videoUrl} controls autoPlay playsInline className="w-full h-full" />
+                ) : embedUrl(active.videoUrl) ? (
+                  <iframe
+                    src={embedUrl(active.videoUrl)}
+                    className="w-full h-full"
+                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                    allowFullScreen
+                    title={active.title}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <a href={active.videoUrl} target="_blank" rel="noopener noreferrer" className="text-gold-300 underline">
+                      Open video &#8599;
+                    </a>
+                  </div>
+                )}
+              </div>
+              <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="text-[10px] tracking-widest2 uppercase text-gold-300/80">{active.category}</p>
+                  <p className="font-display text-3xl text-bone mt-1">{active.title}</p>
+                  {active.description && <p className="text-sm text-bone/50 mt-1 max-w-2xl">{active.description}</p>}
+                </div>
+                {videoKind(active.videoUrl) !== 'file' && (
+                  <a
+                    href={active.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] tracking-widest uppercase text-bone/50 hover:text-gold-300 transition-colors"
+                  >
+                    Watch on {videoKind(active.videoUrl) === 'facebook' ? 'Facebook' : videoKind(active.videoUrl) === 'youtube' ? 'YouTube' : 'original site'} &#8599;
+                  </a>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+      </Portal>
     </>
   );
 }

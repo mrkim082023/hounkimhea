@@ -8,11 +8,20 @@ export async function PATCH(request, { params }) {
   const video = db.videos.find((v) => v.id === params.id);
   if (!video) return NextResponse.json({ error: 'Video not found.' }, { status: 404 });
 
-  const editable = ['title', 'videoUrl', 'thumbnail', 'description', 'category'];
-  for (const key of editable) {
+  if ('category' in updates && !db.videoCategories.includes(updates.category)) {
+    return NextResponse.json({ error: 'Unknown video category.' }, { status: 400 });
+  }
+  const old = { videoUrl: video.videoUrl, thumbnail: video.thumbnail };
+  for (const key of ['title', 'videoUrl', 'thumbnail', 'description', 'category', 'featured']) {
     if (key in updates) video[key] = updates[key];
   }
+  if (!video.title || !video.videoUrl) {
+    return NextResponse.json({ error: 'Title and video link are required.' }, { status: 400 });
+  }
   await writeDb(db);
+  await deleteBlobs(
+    [old.videoUrl, old.thumbnail].filter((u, i) => u && u !== [video.videoUrl, video.thumbnail][i])
+  );
   return NextResponse.json({ video });
 }
 

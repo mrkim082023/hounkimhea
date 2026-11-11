@@ -14,8 +14,19 @@
   scrollbar-color: #b8862c33 transparent;
 }
 
-html {
-  scroll-behavior: smooth;
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+::selection {
+  background: #b8862c55;
+  color: #f2ede2;
 }
 
 body {

@@ -29,6 +29,29 @@ export default async function ClientsPage() {
             <ClientLogos clients={db.clients} />
           </Reveal>
 
+          <div className="mt-20 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-ink-700/60 border border-ink-700/60">
+            {db.clients.map((client, i) => (
+              <Reveal key={client.id} delay={(i % 4) * 0.06} className="bg-ink-950">
+                <div className="group relative aspect-[4/3] flex flex-col items-center justify-center gap-4 p-6 overflow-hidden">
+                  <span className="absolute inset-0 bg-gradient-to-br from-gold-400/0 to-gold-400/0 group-hover:from-gold-400/10 group-hover:to-transparent transition-all duration-700" />
+                  {client.logo ? (
+                    <img
+                      src={client.logo}
+                      alt={client.name}
+                      loading="lazy"
+                      className="relative max-h-16 max-w-[70%] object-contain grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-silk"
+                    />
+                  ) : (
+                    <span className="relative font-display text-2xl text-bone/70">{client.name}</span>
+                  )}
+                  <span className="relative text-[10px] tracking-widest uppercase text-bone/30 group-hover:text-gold-300 transition-colors duration-500 text-center">
+                    {client.name}
+                  </span>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
           {withQuotes.length > 0 && (
             <div className="pt-20 md:pt-28">
               <Reveal>

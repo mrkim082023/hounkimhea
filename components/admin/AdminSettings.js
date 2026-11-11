@@ -86,7 +86,7 @@ export default function AdminSettings() {
 
   return (
     <div className="space-y-12 pb-10">
-      <div className="sticky top-0 z-20 -mx-6 md:-mx-10 px-6 md:px-10 py-3 bg-ink-950/95 backdrop-blur-sm border-b border-ink-700 flex items-center justify-between gap-4 flex-wrap">
+      <div className="sticky top-[53px] z-20 -mx-6 md:-mx-10 px-6 md:px-10 py-3 bg-ink-950/95 backdrop-blur-sm border-b border-ink-700 flex items-center justify-between gap-4 flex-wrap">
         <p className="text-[11px] tracking-widest2 uppercase text-gold-400">Site content</p>
         <div className="flex items-center gap-4">
           {status && <p className="text-xs text-gold-300/90">{status}</p>}

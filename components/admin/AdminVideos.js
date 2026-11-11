@@ -1,240 +1,284 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { uploadFile } from '../../lib/clientUpload';
+import { videoKind, videoThumbnail } from '../../lib/video';
+import {
+  api, Button, Card, ConfirmDelete, ImagePicker, Input, Label, MoveButtons, SectionTitle, Select, Textarea, Toggle, move, useToast,
+} from './ui';
 
-async function jsonFetch(url, opts) {
-  const res = await fetch(url, opts);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Request failed.');
-  return data;
+const EMPTY = { title: '', category: '', videoUrl: '', thumbnail: '', description: '', featured: false };
+
+function VideoForm({ initial, categories, onSave, onCancel, saveLabel }) {
+  const [form, setForm] = useState({ ...initial, category: initial.category || categories[0] || '' });
+  const [source, setSource] = useState(videoKind(initial.videoUrl) === 'file' ? 'upload' : 'link');
+  const [busy, setBusy] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState('');
+  const fileRef = useRef(null);
+  const toast = useToast();
+  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const pickVideo = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploadMsg(`Uploading ${(file.size / 1024 / 1024).toFixed(0)} MB… keep this page open`);
+    try {
+      set('videoUrl')(await uploadFile(file, 'videos', { compress: false }));
+      setUploadMsg('Video uploaded ✓');
+    } catch (err) {
+      toast(err.message, 'error');
+      setUploadMsg('');
+    }
+  };
+
+  const preview = videoThumbnail(form);
+
+  return (
+    <div className="space-y-5">
+      <div className="grid sm:grid-cols-2 gap-5">
+        <div>
+          <Label>Title</Label>
+          <Input value={form.title} onChange={(e) => set('title')(e.target.value)} />
+        </div>
+        <div>
+          <Label>Category</Label>
+          <Select options={categories} value={form.category} onChange={(e) => set('category')(e.target.value)} />
+        </div>
+      </div>
+
+      <div>
+        <Label>Video</Label>
+        <div className="flex gap-2 mb-3">
+          {[
+            ['link', 'Paste a link (YouTube / Facebook / Vimeo)'],
+            ['upload', 'Upload a video file'],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSource(key)}
+              className={`px-4 py-2 text-[11px] tracking-widest uppercase rounded-sm border transition-colors ${
+                source === key ? 'border-gold-400 text-gold-300 bg-gold-400/10' : 'border-ink-700 text-bone/50 hover:text-bone/80'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {source === 'link' ? (
+          <Input
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=…"
+            value={videoKind(form.videoUrl) === 'file' ? '' : form.videoUrl}
+            onChange={(e) => set('videoUrl')(e.target.value)}
+          />
+        ) : (
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => fileRef.current?.click()}>
+              {form.videoUrl && videoKind(form.videoUrl) === 'file' ? 'Replace video file' : 'Choose video file'}
+            </Button>
+            <span className="text-xs text-bone/50">{uploadMsg || (videoKind(form.videoUrl) === 'file' ? 'A video file is attached.' : 'MP4, WebM or MOV')}</span>
+            <input ref={fileRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={pickVideo} />
+          </div>
+        )}
+      </div>
+
+      <div className="grid md:grid-cols-[auto_1fr] gap-6 items-start">
+        <ImagePicker
+          label="Thumbnail"
+          value={form.thumbnail}
+          onChange={set('thumbnail')}
+          folder="video-thumbnails"
+        />
+        <div className="text-xs text-bone/40 leading-relaxed pt-6">
+          {form.thumbnail
+            ? 'Your own thumbnail is used.'
+            : preview
+              ? 'No thumbnail uploaded — the YouTube thumbnail will be used automatically.'
+              : 'Facebook and uploaded videos need a thumbnail image, otherwise a plain dark card is shown.'}
+        </div>
+      </div>
+
+      <div>
+        <Label hint="optional">Description</Label>
+        <Textarea rows={2} value={form.description || ''} onChange={(e) => set('description')(e.target.value)} />
+      </div>
+
+      <Toggle checked={!!form.featured} onChange={set('featured')} label="Show on homepage (Featured films)" />
+
+      <div className="flex gap-3">
+        <Button
+          busy={busy}
+          disabled={!form.title.trim() || !form.videoUrl}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await onSave(form);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {saveLabel}
+        </Button>
+        {onCancel && (
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }
-
-
-const SOURCE_OPTIONS = [
-  { key: 'link', label: 'Link (YouTube / Facebook / Vimeo)' },
-  { key: 'upload', label: 'Upload video file' },
-];
 
 export default function AdminVideos() {
   const [videos, setVideos] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [error, setError] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [source, setSource] = useState('link');
-  const [thumbFile, setThumbFile] = useState(null);
-  const [videoFile, setVideoFile] = useState(null);
-  const [form, setForm] = useState({
-    title: '',
-    category: '',
-    videoUrl: '',
-    description: '',
-  });
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const toast = useToast();
 
-  const load = async () => {
-    const data = await jsonFetch('/api/videos');
-    setVideos(data.videos);
-    setCategories(data.videoCategories);
-    setForm((f) => ({ ...f, category: f.category || data.videoCategories[0] || '' }));
-  };
-
+  const load = () =>
+    api('/api/videos')
+      .then((d) => {
+        setVideos(d.videos);
+        setCategories(d.videoCategories);
+      })
+      .catch((e) => toast(e.message, 'error'));
   useEffect(() => {
-    load().catch((e) => setError(e.message));
+    load();
   }, []);
 
-  const createVideo = async (e) => {
-    e.preventDefault();
-    setError('');
-    setCreating(true);
+  const create = async (form) => {
     try {
-      let videoUrl = form.videoUrl;
-      if (source === 'upload') {
-        if (!videoFile) throw new Error('Choose a video file to upload.');
-        videoUrl = await uploadFile(videoFile, 'videos');
-      }
-      let thumbnail = '';
-      if (thumbFile) thumbnail = await uploadFile(thumbFile, 'video-thumbnails');
-
-      await jsonFetch('/api/videos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, videoUrl, thumbnail }),
-      });
-
-      setForm((f) => ({ ...f, title: '', videoUrl: '', description: '' }));
-      setThumbFile(null);
-      setVideoFile(null);
-      await load();
+      await api('/api/videos', { method: 'POST', json: form });
+      toast('Video added — it’s live on the site.');
+      setAdding(false);
+      load();
     } catch (e) {
-      setError(e.message);
-    } finally {
-      setCreating(false);
+      toast(e.message, 'error');
     }
   };
-
-  const deleteVideo = async (id) => {
-    if (!confirm('Delete this video?')) return;
+  const save = async (id, form) => {
     try {
-      await jsonFetch(`/api/videos/${id}`, { method: 'DELETE' });
-      await load();
+      await api(`/api/videos/${id}`, { method: 'PATCH', json: form });
+      toast('Changes saved.');
+      setEditing(null);
+      load();
     } catch (e) {
-      setError(e.message);
+      toast(e.message, 'error');
+    }
+  };
+  const remove = async (id) => {
+    try {
+      await api(`/api/videos/${id}`, { method: 'DELETE' });
+      toast('Video deleted.');
+      load();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+  const toggleFeatured = async (v) => {
+    setVideos((list) => list.map((x) => (x.id === v.id ? { ...x, featured: !x.featured } : x)));
+    try {
+      await api(`/api/videos/${v.id}`, { method: 'PATCH', json: { featured: !v.featured } });
+    } catch (e) {
+      toast(e.message, 'error');
+      load();
+    }
+  };
+  const reorderWithin = async (category, from, to) => {
+    const inCat = videos.filter((v) => v.category === category);
+    const movedCat = move(inCat, from, to);
+    let k = 0;
+    const next = videos.map((v) => (v.category === category ? movedCat[k++] : v));
+    setVideos(next);
+    try {
+      await api('/api/reorder', { method: 'POST', json: { collection: 'videos', ids: next.map((v) => v.id) } });
+    } catch (e) {
+      toast(e.message, 'error');
+      load();
     }
   };
 
   return (
-    <div className="space-y-12">
-      <form onSubmit={createVideo} className="border border-ink-700 rounded-sm p-6 space-y-5">
-        <p className="text-[11px] tracking-widest2 uppercase text-gold-400">New video</p>
-
-        <div className="grid sm:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-              Title
-            </label>
-            <input
-              required
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="w-full px-4 py-3 text-sm rounded-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-              Category
-            </label>
-            <select
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-              className="w-full px-4 py-3 text-sm rounded-sm"
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-3">
-            Video source
-          </label>
-          <div className="flex gap-2 mb-4">
-            {SOURCE_OPTIONS.map((opt) => (
-              <button
-                type="button"
-                key={opt.key}
-                onClick={() => setSource(opt.key)}
-                className={`px-4 py-2 text-[11px] tracking-widest uppercase rounded-sm border transition-colors ${
-                  source === opt.key
-                    ? 'border-gold-400 text-gold-300 bg-gold-400/10'
-                    : 'border-ink-700 text-bone/50 hover:text-bone/80'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          {source === 'link' ? (
-            <input
-              required
-              type="url"
-              placeholder="https://www.youtube.com/watch?v=… or a Facebook video link"
-              value={form.videoUrl}
-              onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
-              className="w-full px-4 py-3 text-sm rounded-sm"
-            />
-          ) : (
-            <input
-              required
-              type="file"
-              accept="video/mp4,video/webm,video/quicktime"
-              onChange={(e) => setVideoFile(e.target.files[0])}
-              className="w-full text-sm text-bone/60"
-            />
-          )}
-        </div>
-
-        <div>
-          <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-            Thumbnail image (optional)
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setThumbFile(e.target.files[0])}
-            className="w-full text-sm text-bone/60"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-            Description (optional)
-          </label>
-          <textarea
-            rows={2}
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            className="w-full px-4 py-3 text-sm rounded-sm resize-none"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={creating}
-          className="border border-gold-400/60 px-6 py-3 text-[12px] tracking-widest uppercase text-gold-200 hover:bg-gold-400 hover:text-ink-950 transition-colors duration-400 disabled:opacity-50"
-        >
-          {creating ? 'Saving…' : 'Add video'}
-        </button>
-      </form>
-
-      {error && <p className="text-xs text-red-400">{error}</p>}
-
-      <div className="space-y-4">
-        {categories.map((category) => {
-          const inCategory = videos.filter((v) => v.category === category);
-          if (!inCategory.length) return null;
-          return (
-            <div key={category}>
-              <p className="text-[11px] tracking-widest2 uppercase text-gold-400 mb-3">
-                {category} &middot; {inCategory.length}
-              </p>
-              <div className="space-y-3 mb-8">
-                {inCategory.map((video) => (
-                  <div
-                    key={video.id}
-                    className="flex items-center justify-between gap-4 border border-ink-700 rounded-sm p-4"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-20 h-12 rounded-sm bg-ink-800 overflow-hidden shrink-0">
-                        {video.thumbnail && (
-                          <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-bone truncate">{video.title}</p>
-                        <p className="text-xs text-bone/40 truncate">{video.videoUrl}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => deleteVideo(video.id)}
-                      className="text-[11px] tracking-widest uppercase text-red-400/70 hover:text-red-400 transition-colors shrink-0"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-        {videos.length === 0 && (
-          <p className="text-bone/30 text-sm">No videos yet — add your first one above.</p>
-        )}
+    <div className="space-y-8">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <SectionTitle sub="Click Edit to change any video. ★ = shown on the homepage. Arrows change the order.">
+          Videos · {videos.length}
+        </SectionTitle>
+        {!adding && <Button onClick={() => setAdding(true)}>+ Add video</Button>}
       </div>
+
+      <AnimatePresence>
+        {adding && categories.length > 0 && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+            <Card className="p-6">
+              <SectionTitle>New video</SectionTitle>
+              <VideoForm initial={EMPTY} categories={categories} onSave={create} onCancel={() => setAdding(false)} saveLabel="Add video" />
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {categories.map((category) => {
+        const inCat = videos.filter((v) => v.category === category);
+        return (
+          <div key={category}>
+            <p className="text-[11px] tracking-widest2 uppercase text-bone/50 mb-3">
+              {category} · {inCat.length}
+            </p>
+            <div className="space-y-3">
+              {inCat.map((video, i) => (
+                <motion.div layout key={video.id}>
+                  <Card className="p-4">
+                    {editing === video.id ? (
+                      <VideoForm
+                        initial={{ ...EMPTY, ...video }}
+                        categories={categories}
+                        onSave={(f) => save(video.id, f)}
+                        onCancel={() => setEditing(null)}
+                        saveLabel="Save changes"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-4">
+                        <MoveButtons index={i} total={inCat.length} onMove={(a, b) => reorderWithin(category, a, b)} />
+                        <div className="w-28 aspect-video rounded-sm bg-ink-800 overflow-hidden shrink-0">
+                          {videoThumbnail(video) && <img src={videoThumbnail(video).replace('maxresdefault', 'hqdefault')} alt="" className="w-full h-full object-cover" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-bone truncate">{video.title}</p>
+                          <p className="text-xs text-bone/40 truncate">
+                            {{ youtube: 'YouTube', facebook: 'Facebook', vimeo: 'Vimeo', file: 'Uploaded file', link: 'Link' }[videoKind(video.videoUrl)]}
+                            {video.description ? ` · ${video.description}` : ''}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          title={video.featured ? 'Shown on homepage — click to remove' : 'Click to show on homepage'}
+                          onClick={() => toggleFeatured(video)}
+                          className={`text-xl transition-colors ${video.featured ? 'text-gold-300' : 'text-bone/20 hover:text-gold-300/60'}`}
+                        >
+                          ★
+                        </button>
+                        <div className="flex gap-2 shrink-0">
+                          <Button variant="ghost" onClick={() => setEditing(video.id)}>
+                            Edit
+                          </Button>
+                          <ConfirmDelete onConfirm={() => remove(video.id)} question="Delete this video?" />
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </motion.div>
+              ))}
+              {inCat.length === 0 && <p className="text-bone/25 text-sm">No videos in this category yet.</p>}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

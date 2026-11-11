@@ -1,5 +1,6 @@
 import { readDb } from '../../lib/db';
 import Reveal from '../../components/Reveal';
+import FadeImage from '../../components/FadeImage';
 import JourneyTimeline from '../../components/JourneyTimeline';
 
 export const metadata = { title: 'About — Houn Kimhea' };
@@ -21,11 +22,16 @@ export default async function AboutPage() {
 
         <div className="grid md:grid-cols-5 gap-14">
           <Reveal className="md:col-span-2" delay={0.05}>
-            <div className="aspect-[4/5] rounded-sm overflow-hidden relative bg-ink-800">
-              {settings.aboutPhoto && (
-                <img src={settings.aboutPhoto} alt="Houn Kimhea" className="w-full h-full object-cover" />
-              )}
-            </div>
+            {settings.aboutPhoto && (
+              <FadeImage
+                src={settings.aboutPhoto}
+                alt="Houn Kimhea"
+                width={1080}
+                eager
+                className="aspect-[4/5] rounded-sm"
+                imgClassName="w-full h-full object-cover"
+              />
+            )}
           </Reveal>
 
           <Reveal className="md:col-span-3" delay={0.15}>

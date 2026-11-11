@@ -2,30 +2,44 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { readDb } from '../../../../lib/db';
 import { albumPhotos } from '../../../../lib/photos';
+import { slugify } from '../../../../lib/slug';
+import Reveal from '../../../../components/Reveal';
 import AlbumGallery from '../../../../components/AlbumGallery';
+
+export async function generateMetadata({ params }) {
+  const db = await readDb();
+  const album = db.albums.find((a) => a.id === params.album);
+  return { title: album ? `${album.title} — Houn Kimhea` : 'Album' };
+}
 
 export default async function AlbumPage({ params }) {
   const db = await readDb();
-  const { category, album: albumId } = params;
-  const albumData = db.albums.find(a => a.id === albumId);
+  const album = db.albums.find((a) => a.id === params.album);
+  if (!album) notFound();
 
-  if (!albumData) {
-    return notFound();
-  }
-
-  const photos = albumPhotos(albumData);
-
-  const fullAlbum = { ...albumData, photos };
+  const photos = albumPhotos(album);
 
   return (
-    <div className="min-h-screen bg-black text-white pt-24 pb-12">
-      <div className="container mx-auto px-4">
-        <Link href="/photography" className="text-xs tracking-widest text-neutral-400 uppercase hover:text-amber-500 transition-colors inline-flex items-center gap-2 mb-6">
-          &larr; {albumData.category}
+    <div className="mx-auto max-w-6xl px-6 md:px-10 py-28 md:py-36">
+      <Reveal>
+        <Link
+          href={`/photography/${slugify(album.category)}`}
+          className="group inline-flex items-center gap-2 text-[12px] tracking-widest uppercase text-bone/40 hover:text-gold-300 transition-colors"
+        >
+          <span className="transition-transform duration-300 group-hover:-translate-x-1">&larr;</span> {album.category}
         </Link>
-        <h1 className="font-display text-4xl md:text-6xl text-bone mb-12">{albumData.title}</h1>
-        <AlbumGallery album={fullAlbum} />
-      </div>
+        <h1 className="font-display text-5xl md:text-7xl mt-5 text-bone leading-[1.05]">{album.title}</h1>
+        <div className="mt-5 mb-14 md:mb-20 flex flex-wrap items-center gap-4 text-[12px] tracking-widest uppercase text-bone/40">
+          <span>{photos.length} photos</span>
+          <span className="w-10 h-px bg-gold-400/60" />
+          <span className="text-gold-300/80">Tap a photo to view</span>
+        </div>
+        {album.description && (
+          <p className="-mt-8 mb-14 max-w-2xl text-bone/60 leading-relaxed">{album.description}</p>
+        )}
+      </Reveal>
+
+      <AlbumGallery album={{ ...album, photos }} />
     </div>
   );
 }

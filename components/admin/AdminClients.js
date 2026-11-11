@@ -1,143 +1,161 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { uploadFile } from '../../lib/clientUpload';
+import { AnimatePresence, motion } from 'framer-motion';
+import { api, Button, Card, ConfirmDelete, ImagePicker, Input, Label, MoveButtons, SectionTitle, Textarea, move, useToast } from './ui';
 
-async function jsonFetch(url, opts) {
-  const res = await fetch(url, opts);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Request failed.');
-  return data;
+const EMPTY = { name: '', logo: '', quote: '', website: '' };
+
+function ClientForm({ initial, onSave, onCancel, saveLabel }) {
+  const [form, setForm] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+  return (
+    <div className="space-y-5">
+      <div className="grid md:grid-cols-[auto_1fr] gap-6">
+        <ImagePicker label="Logo" value={form.logo} onChange={set('logo')} folder="clients" aspect="aspect-[4/3]" contain />
+        <div className="space-y-4">
+          <div>
+            <Label>Name</Label>
+            <Input value={form.name} onChange={(e) => set('name')(e.target.value)} placeholder="e.g. Prince Bank" />
+          </div>
+          <div>
+            <Label hint="optional">Website</Label>
+            <Input value={form.website || ''} onChange={(e) => set('website')(e.target.value)} placeholder="https://…" />
+          </div>
+        </div>
+      </div>
+      <div>
+        <Label hint="optional — shows in “What partners say”">Testimonial quote</Label>
+        <Textarea rows={2} value={form.quote || ''} onChange={(e) => set('quote')(e.target.value)} />
+      </div>
+      <div className="flex gap-3">
+        <Button
+          busy={busy}
+          disabled={!form.name.trim()}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await onSave(form);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {saveLabel}
+        </Button>
+        {onCancel && (
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminClients() {
   const [clients, setClients] = useState([]);
-  const [error, setError] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [logoFile, setLogoFile] = useState(null);
-  const [form, setForm] = useState({ name: '', quote: '' });
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const toast = useToast();
 
-  const load = async () => {
-    const data = await jsonFetch('/api/clients');
-    setClients(data.clients);
-  };
-
+  const load = () => api('/api/clients').then((d) => setClients(d.clients)).catch((e) => toast(e.message, 'error'));
   useEffect(() => {
-    load().catch((e) => setError(e.message));
+    load();
   }, []);
 
-  const createClient = async (e) => {
-    e.preventDefault();
-    setError('');
-    setCreating(true);
+  const create = async (form) => {
     try {
-      let logo = '';
-      if (logoFile) {
-        logo = await uploadFile(logoFile, 'clients');
-      }
-      await jsonFetch('/api/clients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, logo }),
-      });
-      setForm({ name: '', quote: '' });
-      setLogoFile(null);
-      await load();
+      await api('/api/clients', { method: 'POST', json: form });
+      toast('Client added — it’s live on the site.');
+      setAdding(false);
+      load();
     } catch (e) {
-      setError(e.message);
-    } finally {
-      setCreating(false);
+      toast(e.message, 'error');
     }
   };
 
-  const deleteClient = async (id) => {
-    if (!confirm('Remove this client?')) return;
+  const save = async (id, form) => {
     try {
-      await jsonFetch(`/api/clients/${id}`, { method: 'DELETE' });
-      await load();
+      await api(`/api/clients/${id}`, { method: 'PATCH', json: form });
+      toast('Changes saved.');
+      setEditing(null);
+      load();
     } catch (e) {
-      setError(e.message);
+      toast(e.message, 'error');
+    }
+  };
+
+  const remove = async (id) => {
+    try {
+      await api(`/api/clients/${id}`, { method: 'DELETE' });
+      toast('Client removed.');
+      load();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+
+  const reorder = async (from, to) => {
+    const next = move(clients, from, to);
+    setClients(next);
+    try {
+      await api('/api/reorder', { method: 'POST', json: { collection: 'clients', ids: next.map((c) => c.id) } });
+    } catch (e) {
+      toast(e.message, 'error');
+      load();
     }
   };
 
   return (
-    <div className="space-y-12">
-      <form onSubmit={createClient} className="border border-ink-700 rounded-sm p-6 space-y-5">
-        <p className="text-[11px] tracking-widest2 uppercase text-gold-400">New client</p>
+    <div className="space-y-8">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <SectionTitle sub="Logos scroll on the homepage and fill the Clients page. Use the arrows to change the order.">
+          Clients · {clients.length}
+        </SectionTitle>
+        {!adding && <Button onClick={() => setAdding(true)}>+ Add client</Button>}
+      </div>
 
-        <div>
-          <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-            Name
-          </label>
-          <input
-            required
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-4 py-3 text-sm rounded-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-            Logo (optional)
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setLogoFile(e.target.files[0])}
-            className="w-full text-sm text-bone/60"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-            Quote (optional)
-          </label>
-          <textarea
-            rows={2}
-            value={form.quote}
-            onChange={(e) => setForm((f) => ({ ...f, quote: e.target.value }))}
-            className="w-full px-4 py-3 text-sm rounded-sm resize-none"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={creating}
-          className="border border-gold-400/60 px-6 py-3 text-[12px] tracking-widest uppercase text-gold-200 hover:bg-gold-400 hover:text-ink-950 transition-colors duration-400 disabled:opacity-50"
-        >
-          {creating ? 'Saving…' : 'Add client'}
-        </button>
-      </form>
-
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      <AnimatePresence>
+        {adding && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+            <Card className="p-6">
+              <SectionTitle>New client</SectionTitle>
+              <ClientForm initial={EMPTY} onSave={create} onCancel={() => setAdding(false)} saveLabel="Add client" />
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="space-y-3">
-        {clients.map((client) => (
-          <div
-            key={client.id}
-            className="flex items-center justify-between gap-4 border border-ink-700 rounded-sm p-4"
-          >
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="w-12 h-12 rounded-sm bg-ink-800 overflow-hidden shrink-0 flex items-center justify-center">
-                {client.logo && <img src={client.logo} alt="" className="w-full h-full object-contain" />}
-              </div>
-              <div className="min-w-0">
-                <p className="text-bone truncate">{client.name}</p>
-                {client.quote && <p className="text-xs text-bone/40 truncate">{client.quote}</p>}
-              </div>
-            </div>
-            <button
-              onClick={() => deleteClient(client.id)}
-              className="text-[11px] tracking-widest uppercase text-red-400/70 hover:text-red-400 transition-colors shrink-0"
-            >
-              Delete
-            </button>
-          </div>
+        {clients.map((client, i) => (
+          <motion.div layout key={client.id}>
+            <Card className="p-4">
+              {editing === client.id ? (
+                <ClientForm initial={{ ...EMPTY, ...client }} onSave={(f) => save(client.id, f)} onCancel={() => setEditing(null)} saveLabel="Save changes" />
+              ) : (
+                <div className="flex items-center gap-4">
+                  <MoveButtons index={i} total={clients.length} onMove={reorder} />
+                  <div className="w-16 h-12 rounded-sm bg-bone/95 overflow-hidden shrink-0 flex items-center justify-center p-1">
+                    {client.logo ? <img src={client.logo} alt="" className="max-w-full max-h-full object-contain" /> : <span className="text-ink-800 text-xs">No logo</span>}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-bone truncate">{client.name}</p>
+                    {client.quote && <p className="text-xs text-bone/40 truncate">“{client.quote}”</p>}
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button variant="ghost" onClick={() => setEditing(client.id)}>
+                      Edit
+                    </Button>
+                    <ConfirmDelete onConfirm={() => remove(client.id)} question="Remove this client?" />
+                  </div>
+                </div>
+              )}
+            </Card>
+          </motion.div>
         ))}
-        {clients.length === 0 && (
-          <p className="text-bone/30 text-sm">No clients yet — add your first one above.</p>
-        )}
+        {clients.length === 0 && <p className="text-bone/30 text-sm">No clients yet — add your first one above.</p>}
       </div>
     </div>
   );

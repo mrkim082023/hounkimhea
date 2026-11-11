@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readDb, writeDb, uid } from '../../../lib/db';
-import { albumCover } from '../../../lib/photos';
-import manifest from '../../../data/uploads-manifest.json';
+import { albumCover, folderPhotos } from '../../../lib/photos';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -12,7 +11,7 @@ export async function GET(request) {
   albums = albums.map((a) => ({
     ...a,
     displayCover: albumCover(a),
-    folderPhotoCount: a.folderPath ? (manifest[a.folderPath] || []).length : 0,
+    folderPhotos: folderPhotos(a),
   }));
   return NextResponse.json({ albums, categories: db.categories });
 }

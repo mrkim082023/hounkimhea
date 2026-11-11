@@ -1,37 +1,50 @@
 import Link from 'next/link';
 import { albumPhotos, albumCover } from '../lib/photos';
+import { slugify } from '../lib/slug';
+import Reveal from './Reveal';
+import FadeImage from './FadeImage';
 
 export default function AlbumGrid({ albums }) {
-  const completedAlbums = albums.map((album) => ({
+  const list = albums.map((album) => ({
     ...album,
-    coverImage: albumCover(album),
-    photos: albumPhotos(album),
+    cover: albumCover(album),
+    count: albumPhotos(album).length,
   }));
 
+  if (!list.length) {
+    return <p className="font-display text-2xl text-bone/40 py-16 text-center">No albums here yet.</p>;
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {completedAlbums.map((album) => (
-        <Link 
-          href={`/photography/${album.category.toLowerCase().replace(/\s+/g, '-')}/${album.id}`} 
-          key={album.id} 
-          className="group block rounded-sm overflow-hidden bg-ink-900 border border-ink-700 hover:border-gold-400/40 transition-colors duration-400 relative"
-        >
-          <div className="aspect-[4/3] w-full overflow-hidden bg-ink-800 relative">
-            <img 
-              src={album.coverImage} 
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      {list.map((album, i) => (
+        <Reveal key={album.id} delay={(i % 3) * 0.1}>
+          <Link
+            href={`/photography/${slugify(album.category)}/${album.id}`}
+            className="group block relative overflow-hidden rounded-sm"
+          >
+            <FadeImage
+              src={album.cover}
               alt={album.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              width={828}
+              className="aspect-[4/5]"
+              imgClassName="w-full h-full object-cover group-hover:scale-[1.06] !duration-[1200ms]"
             />
-          </div>
-          <div className="p-4">
-            <span className="text-xs font-semibold tracking-wider text-gold-400 uppercase">{album.category}</span>
-            <h3 className="font-display text-xl text-bone mt-1">{album.title}</h3>
-            <p className="text-xs text-bone/40 mt-1">{album.photos.length} photos</p>
-          </div>
-          <div className="absolute top-4 right-4 w-8 h-8 rounded-full border border-gold-300/0 group-hover:border-gold-300/60 flex items-center justify-center text-gold-300 opacity-0 group-hover:opacity-100 transition-all duration-400">
-            <span className="text-sm">&#8599;</span>
-          </div>
-        </Link>
+            <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-700" />
+            <div className="absolute inset-x-0 bottom-0 p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-700 ease-silk">
+              <p className="text-[10px] tracking-widest2 uppercase text-gold-300/90">{album.category}</p>
+              <h3 className="font-display text-2xl md:text-3xl text-bone mt-1 leading-tight">{album.title}</h3>
+              <div className="mt-3 flex items-center gap-3 text-[11px] tracking-widest uppercase text-bone/60">
+                <span>{album.count} photos</span>
+                <span className="h-px w-0 bg-gold-400 transition-all duration-700 ease-silk group-hover:w-10" />
+                <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-700 ease-silk text-gold-300">
+                  View album
+                </span>
+              </div>
+            </div>
+            <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-gold-300/0 group-hover:ring-gold-300/30 transition-all duration-700" />
+          </Link>
+        </Reveal>
       ))}
     </div>
   );

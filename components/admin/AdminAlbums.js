@@ -1,280 +1,390 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { uploadFile } from '../../lib/clientUpload';
+import {
+  api, Button, Card, ConfirmDelete, Input, Label, MoveButtons, SectionTitle, Select, Textarea, Toggle, move, useToast,
+} from './ui';
 
-async function jsonFetch(url, opts) {
-  const res = await fetch(url, opts);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Request failed.');
-  return data;
+function NewAlbum({ categories, onCreated, onCancel }) {
+  const [form, setForm] = useState({ title: '', category: categories[0] || '', description: '' });
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+  return (
+    <Card className="p-6 space-y-5">
+      <SectionTitle sub="e.g. Pre-Wedding holds one album per couple. Create the album, then add its photos.">New album</SectionTitle>
+      <div className="grid sm:grid-cols-2 gap-5">
+        <div>
+          <Label>Album title</Label>
+          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Dara & Sophea" />
+        </div>
+        <div>
+          <Label>Category</Label>
+          <Select options={categories} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+        </div>
+      </div>
+      <div>
+        <Label hint="optional">Description</Label>
+        <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+      </div>
+      <div className="flex gap-3">
+        <Button
+          busy={busy}
+          disabled={!form.title.trim()}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const { album } = await api('/api/albums', { method: 'POST', json: form });
+              toast('Album created — now add photos to it.');
+              onCreated(album.id);
+            } catch (e) {
+              toast(e.message, 'error');
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Create album
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </Card>
+  );
 }
 
-export default function AdminAlbums() {
-  const [albums, setAlbums] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [openId, setOpenId] = useState(null);
-  const [error, setError] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ title: '', category: '', description: '' });
+function AlbumEditor({ album, categories, reload, onClose }) {
+  const [details, setDetails] = useState({
+    title: album.title,
+    category: album.category,
+    description: album.description || '',
+    featured: !!album.featured,
+  });
+  const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileRef = useRef(null);
+  const toast = useToast();
 
-  const load = async () => {
-    const data = await jsonFetch('/api/albums');
-    setAlbums(data.albums);
-    setCategories(data.categories);
-    setForm((f) => ({ ...f, category: f.category || data.categories[0] || '' }));
-  };
-
-  useEffect(() => {
-    load().catch((e) => setError(e.message));
-  }, []);
-
-  const createAlbum = async (e) => {
-    e.preventDefault();
-    setError('');
-    setCreating(true);
+  const patch = async (json, msg) => {
     try {
-      await jsonFetch('/api/albums', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      setForm((f) => ({ ...f, title: '', description: '' }));
-      await load();
+      await api(`/api/albums/${album.id}`, { method: 'PATCH', json });
+      if (msg) toast(msg);
+      await reload();
     } catch (e) {
-      setError(e.message);
-    } finally {
-      setCreating(false);
+      toast(e.message, 'error');
     }
   };
 
-  const deleteAlbum = async (id) => {
-    if (!confirm('Delete this album and all its photos?')) return;
-    try {
-      await jsonFetch(`/api/albums/${id}`, { method: 'DELETE' });
-      await load();
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
-  const uploadPhotos = async (albumId, files, caption, onProgress) => {
-    setError('');
-    const list = Array.from(files);
+  const upload = async (files) => {
+    const list = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (!list.length) return;
     const urls = [];
     try {
       for (let i = 0; i < list.length; i++) {
-        onProgress?.(`Uploading ${i + 1} of ${list.length}…`);
-        urls.push(await uploadFile(list[i], `albums/${albumId}`));
+        setProgress(`Uploading ${i + 1} of ${list.length}…`);
+        urls.push(await uploadFile(list[i], `albums/${album.id}`));
       }
-      onProgress?.('Saving…');
-      await jsonFetch(`/api/albums/${albumId}/photos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls, caption: caption || '' }),
-      });
-      await load();
+      setProgress('Saving…');
+      await api(`/api/albums/${album.id}/photos`, { method: 'POST', json: { urls } });
+      toast(`${urls.length} photo${urls.length > 1 ? 's' : ''} added.`);
+      await reload();
     } catch (e) {
-      setError(e.message);
+      toast(e.message, 'error');
     } finally {
-      onProgress?.('');
+      setProgress('');
     }
   };
 
-  const deletePhoto = async (albumId, photoId) => {
+  const removePhoto = async (photoId) => {
     try {
-      await jsonFetch(`/api/albums/${albumId}/photos/${photoId}`, { method: 'DELETE' });
-      await load();
+      await api(`/api/albums/${album.id}/photos/${photoId}`, { method: 'DELETE' });
+      toast('Photo removed.');
+      await reload();
     } catch (e) {
-      setError(e.message);
+      toast(e.message, 'error');
     }
   };
+
+  const movePhoto = (from, to) => patch({ photoOrder: move(album.photos, from, to).map((p) => p.id) });
+
+  const toggleFolderPhoto = (file) => {
+    const hidden = new Set(album.hiddenFolderPhotos || []);
+    hidden.has(file) ? hidden.delete(file) : hidden.add(file);
+    patch({ hiddenFolderPhotos: [...hidden] });
+  };
+
+  const cover = album.displayCover;
+  const total = album.folderPhotos.filter((p) => !p.hidden).length + album.photos.length;
 
   return (
-    <div className="space-y-12">
-      <form onSubmit={createAlbum} className="border border-ink-700 rounded-sm p-6 space-y-5">
-        <p className="text-[11px] tracking-widest2 uppercase text-gold-400">New album</p>
-        <p className="text-xs text-bone/40 -mt-3">
-          e.g. a Pre-Wedding category can hold one album per couple &mdash; create an album here,
-          then upload that couple&apos;s photos into it below.
-        </p>
+    <div className="border-t border-ink-700 p-5 md:p-6 space-y-8">
+      {/* Details */}
+      <div className="space-y-5">
+        <SectionTitle>Album details</SectionTitle>
         <div className="grid sm:grid-cols-2 gap-5">
           <div>
-            <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-              Album title
-            </label>
-            <input
-              required
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="e.g. Dara & Sophea"
-              className="w-full px-4 py-3 text-sm rounded-sm"
-            />
+            <Label>Title</Label>
+            <Input value={details.title} onChange={(e) => setDetails({ ...details, title: e.target.value })} />
           </div>
           <div>
-            <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-              Category
-            </label>
-            <select
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-              className="w-full px-4 py-3 text-sm rounded-sm"
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            <Label>Category</Label>
+            <Select options={categories} value={details.category} onChange={(e) => setDetails({ ...details, category: e.target.value })} />
           </div>
         </div>
         <div>
-          <label className="block text-[11px] tracking-widest uppercase text-bone/40 mb-2">
-            Description (optional)
-          </label>
-          <textarea
-            rows={2}
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            className="w-full px-4 py-3 text-sm rounded-sm resize-none"
+          <Label hint="optional — shown under the album title">Description</Label>
+          <Textarea rows={2} value={details.description} onChange={(e) => setDetails({ ...details, description: e.target.value })} />
+        </div>
+        <Toggle checked={details.featured} onChange={(v) => setDetails({ ...details, featured: v })} label="Show on homepage (Recent albums)" />
+        <div className="flex gap-3">
+          <Button
+            busy={saving}
+            disabled={!details.title.trim()}
+            onClick={async () => {
+              setSaving(true);
+              await patch(details, 'Album details saved.');
+              setSaving(false);
+            }}
+          >
+            Save details
+          </Button>
+          <Button variant="ghost" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+
+      {/* Photos */}
+      <div className="space-y-4">
+        <SectionTitle sub="Hover a photo to set it as the cover, move it, or remove it. Big photos are shrunk automatically before upload.">
+          Photos · {total}
+        </SectionTitle>
+
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            upload(e.dataTransfer.files);
+          }}
+          onClick={() => !progress && fileRef.current?.click()}
+          className={`cursor-pointer rounded-sm border-2 border-dashed p-8 text-center transition-colors ${
+            dragOver ? 'border-gold-400 bg-gold-400/10' : 'border-ink-600 hover:border-gold-400/50'
+          }`}
+        >
+          <p className="text-gold-200 text-sm">{progress || 'Drop photos here, or click to choose'}</p>
+          <p className="text-xs text-bone/30 mt-1">You can select many photos at once.</p>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              upload(e.target.files);
+              e.target.value = '';
+            }}
           />
         </div>
-        <button
-          type="submit"
-          disabled={creating}
-          className="border border-gold-400/60 px-6 py-3 text-[12px] tracking-widest uppercase text-gold-200 hover:bg-gold-400 hover:text-ink-950 transition-colors duration-400 disabled:opacity-50"
-        >
-          {creating ? 'Creating…' : 'Create album'}
-        </button>
-      </form>
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
-
-      <div className="space-y-4">
-        {categories.map((category) => {
-          const inCategory = albums.filter((a) => a.category === category);
-          if (!inCategory.length) return null;
-          return (
-            <div key={category}>
-              <p className="text-[11px] tracking-widest2 uppercase text-gold-400 mb-3">
-                {category} &middot; {inCategory.length}
-              </p>
-              <div className="space-y-3 mb-8">
-                {inCategory.map((album) => (
-                  <AlbumRow
-                    key={album.id}
-                    album={album}
-                    open={openId === album.id}
-                    onToggle={() => setOpenId(openId === album.id ? null : album.id)}
-                    onDelete={() => deleteAlbum(album.id)}
-                    onUpload={(files, caption, onProgress) => uploadPhotos(album.id, files, caption, onProgress)}
-                    onDeletePhoto={(photoId) => deletePhoto(album.id, photoId)}
-                  />
-                ))}
-              </div>
+        {album.photos.length > 0 && (
+          <div>
+            <p className="text-[11px] tracking-widest uppercase text-bone/40 mb-3">Uploaded photos</p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {album.photos.map((photo, i) => (
+                <div key={photo.id} className="relative group aspect-square rounded-sm overflow-hidden bg-ink-800">
+                  <img src={photo.url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  {cover === photo.url && <span className="absolute top-1 left-1 text-[9px] uppercase tracking-widest bg-gold-400 text-ink-950 px-1.5 py-0.5">Cover</span>}
+                  <div className="absolute inset-0 bg-ink-950/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-[10px] uppercase tracking-widest">
+                    {cover !== photo.url && (
+                      <button onClick={() => patch({ coverImage: photo.url }, 'Cover updated.')} className="text-gold-200 hover:text-gold-100">
+                        Set as cover
+                      </button>
+                    )}
+                    <div className="flex gap-3 text-bone/70">
+                      <button disabled={i === 0} onClick={() => movePhoto(i, i - 1)} className="disabled:opacity-20 hover:text-bone">◀</button>
+                      <button disabled={i === album.photos.length - 1} onClick={() => movePhoto(i, i + 1)} className="disabled:opacity-20 hover:text-bone">▶</button>
+                    </div>
+                    <button onClick={() => removePhoto(photo.id)} className="text-red-300 hover:text-red-200">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          );
-        })}
-        {albums.length === 0 && (
-          <p className="text-bone/30 text-sm">No albums yet — create your first one above.</p>
+          </div>
+        )}
+
+        {album.folderPhotos.length > 0 && (
+          <div>
+            <p className="text-[11px] tracking-widest uppercase text-bone/40 mb-1">Original photos</p>
+            <p className="text-xs text-bone/30 mb-3">These came with the website. You can hide any of them; they show before your uploaded photos.</p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {album.folderPhotos.map((p) => (
+                <div key={p.file} className="relative group aspect-square rounded-sm overflow-hidden bg-ink-800">
+                  <img src={p.url} alt="" loading="lazy" className={`w-full h-full object-cover transition-opacity ${p.hidden ? 'opacity-20' : ''}`} />
+                  {cover === p.url && <span className="absolute top-1 left-1 text-[9px] uppercase tracking-widest bg-gold-400 text-ink-950 px-1.5 py-0.5">Cover</span>}
+                  {p.hidden && <span className="absolute inset-0 flex items-center justify-center text-[10px] uppercase tracking-widest text-bone/60">Hidden</span>}
+                  <div className="absolute inset-0 bg-ink-950/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-[10px] uppercase tracking-widest">
+                    {!p.hidden && cover !== p.url && (
+                      <button onClick={() => patch({ coverImage: p.url }, 'Cover updated.')} className="text-gold-200 hover:text-gold-100">
+                        Set as cover
+                      </button>
+                    )}
+                    <button onClick={() => toggleFolderPhoto(p.file)} className={p.hidden ? 'text-gold-200' : 'text-red-300'}>
+                      {p.hidden ? 'Show' : 'Hide'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function AlbumRow({ album, open, onToggle, onDelete, onUpload, onDeletePhoto }) {
-  const [caption, setCaption] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState('');
+export default function AdminAlbums() {
+  const [albums, setAlbums] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [openId, setOpenId] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const toast = useToast();
 
-  const handleFiles = async (e) => {
-    if (!e.target.files.length) return;
-    setUploading(true);
-    await onUpload(e.target.files, caption, setProgress);
-    setUploading(false);
-    setCaption('');
-    e.target.value = '';
+  const load = () =>
+    api('/api/albums')
+      .then((d) => {
+        setAlbums(d.albums);
+        setCategories(d.categories);
+      })
+      .catch((e) => toast(e.message, 'error'));
+  useEffect(() => {
+    load();
+  }, []);
+
+  const remove = async (id) => {
+    try {
+      await api(`/api/albums/${id}`, { method: 'DELETE' });
+      toast('Album deleted.');
+      load();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+
+  const toggleFeatured = async (a) => {
+    setAlbums((list) => list.map((x) => (x.id === a.id ? { ...x, featured: !x.featured } : x)));
+    try {
+      await api(`/api/albums/${a.id}`, { method: 'PATCH', json: { featured: !a.featured } });
+    } catch (e) {
+      toast(e.message, 'error');
+      load();
+    }
+  };
+
+  const reorderWithin = async (category, from, to) => {
+    const inCat = albums.filter((a) => a.category === category);
+    const movedCat = move(inCat, from, to);
+    let k = 0;
+    const next = albums.map((a) => (a.category === category ? movedCat[k++] : a));
+    setAlbums(next);
+    try {
+      await api('/api/reorder', { method: 'POST', json: { collection: 'albums', ids: next.map((a) => a.id) } });
+    } catch (e) {
+      toast(e.message, 'error');
+      load();
+    }
   };
 
   return (
-    <div className="border border-ink-700 rounded-sm">
-      <div className="flex items-center justify-between p-4">
-        <button onClick={onToggle} className="flex items-center gap-4 text-left flex-1 min-w-0">
-          <div className="w-14 h-14 rounded-sm bg-ink-800 overflow-hidden shrink-0">
-            {(album.displayCover || album.coverImage) && (
-              <img src={album.displayCover || album.coverImage} alt="" className="w-full h-full object-cover" />
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="text-bone truncate">{album.title}</p>
-            <p className="text-xs text-bone/40">
-              {(album.folderPhotoCount || 0) + (album.photos?.length || 0)} photos
-            </p>
-          </div>
-        </button>
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={onToggle}
-            className="text-[11px] tracking-widest uppercase text-bone/50 hover:text-gold-300 transition-colors"
-          >
-            {open ? 'Close' : 'Manage'}
-          </button>
-          <button
-            onClick={onDelete}
-            className="text-[11px] tracking-widest uppercase text-red-400/70 hover:text-red-400 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
+    <div className="space-y-8">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <SectionTitle sub="Click Manage to edit an album and its photos. ★ = shown on the homepage. Arrows change the order.">
+          Photography albums · {albums.length}
+        </SectionTitle>
+        {!adding && <Button onClick={() => setAdding(true)}>+ New album</Button>}
       </div>
 
-      {open && (
-        <div className="border-t border-ink-700 p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              placeholder="Caption for new uploads (optional)"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              className="flex-1 px-4 py-2.5 text-sm rounded-sm"
+      <AnimatePresence>
+        {adding && categories.length > 0 && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+            <NewAlbum
+              categories={categories}
+              onCancel={() => setAdding(false)}
+              onCreated={async (id) => {
+                setAdding(false);
+                await load();
+                setOpenId(id);
+              }}
             />
-            <label className="border border-gold-400/60 px-5 py-2.5 text-[12px] tracking-widest uppercase text-gold-200 hover:bg-gold-400 hover:text-ink-950 transition-colors duration-400 cursor-pointer text-center">
-              {uploading ? progress || 'Uploading…' : 'Add photos'}
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFiles}
-                disabled={uploading}
-                className="hidden"
-              />
-            </label>
-          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {album.folderPhotoCount > 0 && (
-            <p className="text-xs text-bone/40">
-              {album.folderPhotoCount} photos come from this album&apos;s original folder in the
-              website code and always show. Photos you add here appear after them.
+      {categories.map((category) => {
+        const inCat = albums.filter((a) => a.category === category);
+        return (
+          <div key={category}>
+            <p className="text-[11px] tracking-widest2 uppercase text-bone/50 mb-3">
+              {category} · {inCat.length}
             </p>
-          )}
-
-          {album.photos?.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-              {album.photos.map((photo) => (
-                <div key={photo.id} className="relative group aspect-square rounded-sm overflow-hidden bg-ink-800">
-                  <img src={photo.url} alt="" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => onDeletePhoto(photo.id)}
-                    className="absolute inset-0 bg-ink-950/0 group-hover:bg-ink-950/60 text-transparent group-hover:text-red-300 flex items-center justify-center text-xs tracking-widest uppercase transition-all duration-300"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+            <div className="space-y-3">
+              {inCat.map((album, i) => {
+                const count = album.folderPhotos.filter((p) => !p.hidden).length + album.photos.length;
+                const open = openId === album.id;
+                return (
+                  <motion.div layout key={album.id}>
+                    <Card className={open ? 'border-gold-400/40' : ''}>
+                      <div className="flex items-center gap-4 p-4">
+                        <MoveButtons index={i} total={inCat.length} onMove={(a, b) => reorderWithin(category, a, b)} />
+                        <button onClick={() => setOpenId(open ? null : album.id)} className="flex items-center gap-4 text-left flex-1 min-w-0">
+                          <div className="w-16 h-16 rounded-sm bg-ink-800 overflow-hidden shrink-0">
+                            {album.displayCover && <img src={album.displayCover} alt="" loading="lazy" className="w-full h-full object-cover" />}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-bone truncate">{album.title}</p>
+                            <p className="text-xs text-bone/40">{count} photos</p>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          title={album.featured ? 'Shown on homepage — click to remove' : 'Click to show on homepage'}
+                          onClick={() => toggleFeatured(album)}
+                          className={`text-xl transition-colors ${album.featured ? 'text-gold-300' : 'text-bone/20 hover:text-gold-300/60'}`}
+                        >
+                          ★
+                        </button>
+                        <div className="flex gap-2 shrink-0">
+                          <Button variant={open ? 'primary' : 'ghost'} onClick={() => setOpenId(open ? null : album.id)}>
+                            {open ? 'Close' : 'Manage'}
+                          </Button>
+                          <ConfirmDelete onConfirm={() => remove(album.id)} question="Delete album and its photos?" />
+                        </div>
+                      </div>
+                      <AnimatePresence initial={false}>
+                        {open && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                            <AlbumEditor album={album} categories={categories} reload={load} onClose={() => setOpenId(null)} />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+              {inCat.length === 0 && <p className="text-bone/25 text-sm">No albums in this category yet.</p>}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        );
+      })}
     </div>
   );
 }

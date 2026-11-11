@@ -8,7 +8,7 @@ export async function GET() {
 
 export async function POST(request) {
   const body = await request.json();
-  const { title, videoUrl, thumbnail = '', description = '', category = '' } = body;
+  const { title, videoUrl, thumbnail = '', description = '', category = '', featured = false } = body;
 
   if (!title || !videoUrl || !category) {
     return NextResponse.json(
@@ -29,6 +29,7 @@ export async function POST(request) {
     thumbnail,
     description,
     category,
+    featured: !!featured,
     createdAt: new Date().toISOString(),
   };
   db.videos.unshift(video);
