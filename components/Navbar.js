@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/about', label: 'About' },
   { href: '/photography', label: 'Photography' },
   { href: '/video', label: 'Video' },
+  { href: '/art', label: 'Contemporary Art' },
   { href: '/clients', label: 'Clients' },
   { href: '/contact', label: 'Contact' },
 ];
@@ -43,7 +44,7 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-silk ${
-        scrolled ? 'bg-ink-950/85 backdrop-blur-md hairline' : 'bg-transparent'
+        scrolled ? 'bg-ink-950/95 hairline' : 'bg-transparent'
       } ${hidden && !open ? '-translate-y-full' : 'translate-y-0'}`}
     >
       <div className="mx-auto max-w-6xl px-6 md:px-10 flex items-center justify-between h-20">
@@ -51,7 +52,7 @@ export default function Navbar() {
           Houn <span className="gold-text">Kimhea</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-9">
+        <nav className="hidden lg:flex items-center gap-8">
           {LINKS.map((link) => {
             const active = pathname === link.href || pathname.startsWith(link.href + '/');
             return (
@@ -80,7 +81,7 @@ export default function Navbar() {
         <button
           aria-label="Toggle menu"
           onClick={() => setOpen((v) => !v)}
-          className="md:hidden relative w-8 h-6 flex flex-col justify-between"
+          className="lg:hidden relative w-8 h-6 flex flex-col justify-between"
         >
           <span
             className={`h-px w-full bg-gold-300 transition-transform duration-300 ease-silk ${
@@ -107,7 +108,7 @@ export default function Navbar() {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="md:hidden overflow-hidden bg-ink-950 hairline"
+            className="lg:hidden overflow-hidden bg-ink-950 hairline"
           >
             <div className="flex flex-col px-6 py-6 gap-5">
               {LINKS.map((link, i) => (

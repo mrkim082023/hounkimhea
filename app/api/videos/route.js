@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readDb, writeDb, uid } from '../../../lib/db';
+import { resolveFacebookLink } from '../../../lib/facebook';
 
 export async function GET() {
   const db = await readDb();
@@ -17,6 +18,7 @@ export async function POST(request) {
     );
   }
 
+  const finalUrl = await resolveFacebookLink(videoUrl.trim());
   const db = await readDb();
   if (!db.videoCategories.includes(category)) {
     return NextResponse.json({ error: 'Unknown video category.' }, { status: 400 });
@@ -25,7 +27,7 @@ export async function POST(request) {
   const video = {
     id: uid(),
     title,
-    videoUrl,
+    videoUrl: finalUrl,
     thumbnail,
     description,
     category,

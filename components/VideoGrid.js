@@ -7,6 +7,8 @@ import { lockScroll } from './SmoothScroll';
 import Portal from './Portal';
 import { embedUrl, videoKind, videoThumbnail } from '../lib/video';
 
+const isReel = (url = '') => /facebook\.com\/reel\//i.test(url);
+
 function YouTubeFallbackImage({ src, alt }) {
   // maxresdefault doesn't exist for every YouTube video; fall back to hqdefault.
   const [s, setS] = useState(src);
@@ -106,7 +108,7 @@ export default function VideoGrid({ videos, categories = [], showFilters = false
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/30 to-ink-950/10 group-hover:via-ink-950/10 transition-all duration-700" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border border-gold-300/70 bg-ink-950/30 backdrop-blur-sm flex items-center justify-center transition-all duration-500 ease-silk group-hover:scale-110 group-hover:bg-gold-400 group-hover:border-gold-400">
+                  <span className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border border-gold-300/70 bg-ink-950/50 flex items-center justify-center transition-all duration-500 ease-silk group-hover:scale-110 group-hover:bg-gold-400 group-hover:border-gold-400">
                     <span className="absolute inset-0 rounded-full border border-gold-300/50 animate-ping opacity-0 group-hover:opacity-60" />
                     <span className="w-0 h-0 border-y-[9px] border-y-transparent border-l-[15px] border-l-gold-300 group-hover:border-l-ink-950 ml-1 transition-colors duration-500" />
                   </span>
@@ -149,10 +151,15 @@ export default function VideoGrid({ videos, categories = [], showFilters = false
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-5xl"
+              className={isReel(active.videoUrl) ? '' : 'w-full max-w-5xl'}
+              style={isReel(active.videoUrl) ? { width: 'min(92vw, calc(72vh * 9 / 16))' } : undefined}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="aspect-video bg-black rounded-sm overflow-hidden shadow-2xl">
+              <div
+                className={`bg-black rounded-sm overflow-hidden shadow-2xl mx-auto ${
+                  isReel(active.videoUrl) ? 'aspect-[9/16]' : 'aspect-video'
+                }`}
+              >
                 {videoKind(active.videoUrl) === 'file' ? (
                   <video src={active.videoUrl} controls autoPlay playsInline className="w-full h-full" />
                 ) : embedUrl(active.videoUrl) ? (

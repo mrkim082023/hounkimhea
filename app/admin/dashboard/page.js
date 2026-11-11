@@ -8,12 +8,14 @@ import AdminVideos from '../../../components/admin/AdminVideos';
 import AdminClients from '../../../components/admin/AdminClients';
 import AdminSettings from '../../../components/admin/AdminSettings';
 import AdminCategories from '../../../components/admin/AdminCategories';
+import AdminArt from '../../../components/admin/AdminArt';
 import { ToastProvider } from '../../../components/admin/ui';
 
 const TABS = [
   { key: 'settings', label: 'Site content' },
   { key: 'albums', label: 'Photography' },
   { key: 'videos', label: 'Videos' },
+  { key: 'art', label: 'Contemporary Art' },
   { key: 'clients', label: 'Clients' },
   { key: 'categories', label: 'Categories' },
 ];
@@ -87,6 +89,7 @@ export default function AdminDashboard() {
           {tab === 'settings' && <AdminSettings />}
           {tab === 'albums' && <AdminAlbums />}
           {tab === 'videos' && <AdminVideos />}
+          {tab === 'art' && <AdminArt />}
           {tab === 'clients' && <AdminClients />}
           {tab === 'categories' && <AdminCategories />}
         </motion.div>

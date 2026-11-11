@@ -31,16 +31,10 @@ function SectionHeader({ eyebrow, title, accent, href, linkLabel }) {
 export default async function HomePage() {
   const db = await readDb();
 
-  // Albums / videos marked "Show on homepage" in the admin panel come first.
-  const featuredAlbums = db.albums.some((a) => a.featured)
-    ? db.albums.filter((a) => a.featured).slice(0, 6)
-    : db.albums.slice(0, 6);
-
-  const featuredVideos = db.videos.some((v) => v.featured)
-    ? db.videos.filter((v) => v.featured).slice(0, 4)
-    : (db.videoCategories || [])
-        .flatMap((c) => db.videos.filter((v) => v.category === c).slice(0, 2))
-        .slice(0, 4);
+  // Items starred in the admin panel come first, then the most recent ones fill the rest.
+  const pick = (items, max) => [...items.filter((i) => i.featured), ...items.filter((i) => !i.featured)].slice(0, max);
+  const featuredAlbums = pick(db.albums, 6);
+  const featuredVideos = pick(db.videos, 4);
 
   return (
     <div>

@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { readDb, writeDb } from '../../../../lib/db';
 import { deleteBlobs } from '../../../../lib/blobDelete';
+import { resolveFacebookLink } from '../../../../lib/facebook';
 
 export async function PATCH(request, { params }) {
   const updates = await request.json();
+  if (typeof updates.videoUrl === 'string') updates.videoUrl = await resolveFacebookLink(updates.videoUrl.trim());
   const db = await readDb();
   const video = db.videos.find((v) => v.id === params.id);
   if (!video) return NextResponse.json({ error: 'Video not found.' }, { status: 404 });

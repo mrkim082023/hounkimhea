@@ -15,8 +15,8 @@ export default function FadeImage({ src, alt = '', width = 828, className = '', 
   return (
     <div className={`relative overflow-hidden bg-ink-800 ${className}`}>
       <div
-        className={`absolute inset-0 bg-gradient-to-br from-ink-800 via-ink-700/60 to-ink-800 transition-opacity duration-700 ${
-          loaded ? 'opacity-0' : 'opacity-100 animate-pulse'
+        className={`absolute inset-0 bg-gradient-to-br from-ink-800 via-ink-700/60 to-ink-800 transition-opacity duration-500 ${
+          loaded ? 'opacity-0' : 'opacity-100'
         }`}
       />
       <img
@@ -27,8 +27,8 @@ export default function FadeImage({ src, alt = '', width = 828, className = '', 
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(true)}
-        className={`transition-[opacity,transform,filter] duration-[900ms] ease-silk ${
-          loaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-[1.04] blur-sm'
+        className={`transition-[opacity,transform] duration-700 ease-silk ${
+          loaded ? 'opacity-100' : 'opacity-0'
         } ${imgClassName}`}
         {...rest}
       />

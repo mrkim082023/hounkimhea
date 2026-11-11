@@ -45,7 +45,7 @@ export default function Hero({
         style={{ x: sx, y: sy }}
         className="absolute inset-0 flex items-center justify-center"
       >
-        <div className="absolute w-[520px] h-[520px] rounded-full bg-gold-500/10 blur-[120px]" />
+        <div className="absolute w-[720px] h-[720px] rounded-full bg-[radial-gradient(circle,rgba(184,134,44,0.12)_0%,transparent_65%)]" />
         <motion.svg
           initial={{ opacity: 0, rotate: -20, scale: 0.9 }}
           animate={{ opacity: 0.5, rotate: 0, scale: 1 }}

@@ -36,6 +36,7 @@ export default async function Footer() {
           <div className="flex flex-col gap-3">
             <Link href="/photography" className="hover:text-gold-300 transition-colors">Photography</Link>
             <Link href="/video" className="hover:text-gold-300 transition-colors">Video</Link>
+            <Link href="/art" className="hover:text-gold-300 transition-colors">Contemporary Art</Link>
           </div>
           <div className="flex flex-col gap-3">
             <Link href="/clients" className="hover:text-gold-300 transition-colors">Clients</Link>

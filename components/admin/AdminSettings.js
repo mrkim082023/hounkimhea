@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { uploadFile } from '../../lib/clientUpload';
+import MilestoneEditor from './MilestoneEditor';
 
 async function jsonFetch(url, opts) {
   const res = await fetch(url, opts);
@@ -217,39 +218,10 @@ export default function AdminSettings() {
           </button>
         </div>
 
-        <div className="space-y-3">
-          {settings.achievements.map((item, i) => (
-            <div key={i} className="grid sm:grid-cols-[100px_1fr_1fr_auto] gap-2 items-start">
-              <input
-                placeholder="Year"
-                value={item.year}
-                onChange={(e) => updateAchievement(i, 'year', e.target.value)}
-                className="px-3 py-2.5 text-sm rounded-sm"
-              />
-              <input
-                placeholder="Title"
-                value={item.title}
-                onChange={(e) => updateAchievement(i, 'title', e.target.value)}
-                className="px-3 py-2.5 text-sm rounded-sm"
-              />
-              <input
-                placeholder="Detail (optional)"
-                value={item.detail}
-                onChange={(e) => updateAchievement(i, 'detail', e.target.value)}
-                className="px-3 py-2.5 text-sm rounded-sm"
-              />
-              <button
-                onClick={() => removeAchievement(i)}
-                className="text-[11px] tracking-widest uppercase text-red-400/70 hover:text-red-400 transition-colors px-2 py-2.5"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          {settings.achievements.length === 0 && (
-            <p className="text-bone/30 text-sm">No milestones yet.</p>
-          )}
-        </div>
+        <p className="text-xs text-bone/40 -mt-2">
+          Click Edit on a milestone to add a description and photos — visitors can click it on the About page. Remember to press Save changes.
+        </p>
+        <MilestoneEditor items={settings.achievements} onChange={(next) => update('achievements', next)} />
       </section>
 
       <section className="border border-ink-700 rounded-sm p-6 space-y-5">
