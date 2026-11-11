@@ -1,9 +1,13 @@
+import { readDb } from '../../lib/db';
 import Reveal from '../../components/Reveal';
 import ContactForm from '../../components/ContactForm';
 
 export const metadata = { title: 'Contact — Houn Kimhea' };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const db = await readDb();
+  const { settings } = db;
+
   return (
     <div className="mx-auto max-w-6xl px-6 md:px-10 py-28 md:py-36">
       <div className="grid md:grid-cols-5 gap-16">
@@ -18,23 +22,47 @@ export default function ContactPage() {
           </p>
 
           <div className="space-y-4 text-sm text-bone/60">
-            <div>
-              <p className="text-[11px] tracking-widest uppercase text-bone/30 mb-1">Email</p>
-              <p>hounkimhea11@gmail.com</p>
-            </div>
-            <div>
-              <p className="text-[11px] tracking-widest uppercase text-bone/30 mb-1">Phone</p>
-              <p>+855 85500898</p>
-            </div>
-            <div>
-              <p className="text-[11px] tracking-widest uppercase text-bone/30 mb-1">Based in</p>
-              <p>Phnom Penh, Cambodia &mdash; available worldwide</p>
-            </div>
+            {settings.contactEmail && (
+              <div>
+                <p className="text-[11px] tracking-widest uppercase text-bone/30 mb-1">Email</p>
+                <p>{settings.contactEmail}</p>
+              </div>
+            )}
+            {settings.contactPhone && (
+              <div>
+                <p className="text-[11px] tracking-widest uppercase text-bone/30 mb-1">Phone</p>
+                <p>{settings.contactPhone}</p>
+              </div>
+            )}
+            {settings.contactLocation && (
+              <div>
+                <p className="text-[11px] tracking-widest uppercase text-bone/30 mb-1">Based in</p>
+                <p>{settings.contactLocation}</p>
+              </div>
+            )}
           </div>
+
+          {settings.socialLinks && settings.socialLinks.length > 0 && (
+            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2">
+              {settings.socialLinks
+                .filter((s) => s.url)
+                .map((s, i) => (
+                  <a
+                    key={i}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[13px] tracking-widest uppercase text-bone/50 hover:text-gold-300 transition-colors"
+                  >
+                    {s.platform} &#8599;
+                  </a>
+                ))}
+            </div>
+          )}
         </Reveal>
 
         <Reveal className="md:col-span-3" delay={0.15}>
-          <ContactForm />
+          <ContactForm email={settings.contactEmail} />
         </Reveal>
       </div>
     </div>

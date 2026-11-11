@@ -5,14 +5,14 @@ import { findCategoryBySlug } from '../../../lib/slug';
 import Reveal from '../../../components/Reveal';
 import VideoGrid from '../../../components/VideoGrid';
 
-export function generateMetadata({ params }) {
-  const db = readDb();
+export async function generateMetadata({ params }) {
+  const db = await readDb();
   const category = findCategoryBySlug(db.videoCategories, params.category);
   return { title: category ? `${category} — Houn Kimhea` : 'Video' };
 }
 
-export default function VideoCategoryPage({ params }) {
-  const db = readDb();
+export default async function VideoCategoryPage({ params }) {
+  const db = await readDb();
   const category = findCategoryBySlug(db.videoCategories, params.category);
   if (!category) notFound();
 

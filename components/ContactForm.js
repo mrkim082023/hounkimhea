@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 
-const CONTACT_EMAIL = 'hounkimhea11@gmail.com';
-
-export default function ContactForm() {
+export default function ContactForm({ email }) {
+  const CONTACT_EMAIL = email || 'hounkimhea11@gmail.com';
   const [form, setForm] = useState({ name: '', email: '', shootType: '', message: '' });
   const [sent, setSent] = useState(false);
 

@@ -5,14 +5,14 @@ import { findCategoryBySlug } from '../../../lib/slug';
 import Reveal from '../../../components/Reveal';
 import AlbumGrid from '../../../components/AlbumGrid';
 
-export function generateMetadata({ params }) {
-  const db = readDb();
+export async function generateMetadata({ params }) {
+  const db = await readDb();
   const category = findCategoryBySlug(db.categories, params.category);
   return { title: category ? `${category} — Houn Kimhea` : 'Photography' };
 }
 
-export default function CategoryPage({ params }) {
-  const db = readDb();
+export default async function CategoryPage({ params }) {
+  const db = await readDb();
   const category = findCategoryBySlug(db.categories, params.category);
   if (!category) notFound();
 

@@ -13,8 +13,8 @@ function extractYouTubeId(url) {
 
 export const metadata = { title: 'Video Portfolio — Houn Kimhea' };
 
-export default function VideoPage() {
-  const db = readDb();
+export default async function VideoPage() {
+  const db = await readDb();
   const videoList = db.videos;
 
   return (

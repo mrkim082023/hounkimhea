@@ -3,7 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { uid } from '../../../lib/db';
 
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+// Only used on your own computer (no cloud storage). On Vercel, uploads go
+// through /api/blob-upload instead.
+const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/svg+xml', 'video/mp4', 'video/webm', 'video/quicktime'];
 
 export async function POST(request) {
   const form = await request.formData();
@@ -16,11 +18,11 @@ export async function POST(request) {
   if (!ALLOWED.includes(file.type)) {
     return NextResponse.json({ error: 'Unsupported file type.' }, { status: 400 });
   }
-  if (file.size > 15 * 1024 * 1024) {
-    return NextResponse.json({ error: 'File is larger than 15MB.' }, { status: 400 });
+  if (process.env.VERCEL) {
+    return NextResponse.json({ error: 'Cloud storage is not connected.' }, { status: 500 });
   }
 
-  const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
+  const ext = file.type.split('/')[1].replace('jpeg', 'jpg').replace('svg+xml', 'svg').replace('quicktime', 'mov');
   const filename = `${uid()}.${ext}`;
   const dir = path.join(process.cwd(), 'public', 'uploads', folder);
   fs.mkdirSync(dir, { recursive: true });

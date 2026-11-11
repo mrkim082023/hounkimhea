@@ -1,49 +1,18 @@
-import fs from 'fs';
-import path from 'path';
 import Link from 'next/link';
+import { albumPhotos, albumCover } from '../lib/photos';
 
 export default function AlbumGrid({ albums }) {
-  const completedAlbums = albums.map(album => {
-    if (album.photos && album.photos.length > 0) return album;
-
-    const publicUploadsPath = path.join(process.cwd(), 'public', 'uploads', album.folderPath || '');
-    let photos = [];
-    let coverImage = album.coverImage || '/placeholder.jpg';
-
-    try {
-      if (album.folderPath && fs.existsSync(publicUploadsPath)) {
-        const files = fs.readdirSync(publicUploadsPath);
-        const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-        const imageFiles = files.filter(file => 
-          imageExtensions.includes(path.extname(file).toLowerCase())
-        );
-
-        photos = imageFiles.map(file => `/uploads/${album.folderPath}/${file}`);
-
-        const hasCover = imageFiles.some(f => f.toLowerCase().startsWith('cover.'));
-        if (hasCover) {
-          const coverFile = imageFiles.find(f => f.toLowerCase().startsWith('cover.'));
-          coverImage = `/uploads/${album.folderPath}/${coverFile}`;
-        } else if (imageFiles.length > 0) {
-          coverImage = photos[0];
-        }
-      }
-    } catch (error) {
-      console.error("Error building AlbumGrid data:", error);
-    }
-
-    return {
-      ...album,
-      coverImage,
-      photos
-    };
-  });
+  const completedAlbums = albums.map((album) => ({
+    ...album,
+    coverImage: albumCover(album),
+    photos: albumPhotos(album),
+  }));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {completedAlbums.map((album) => (
         <Link 
-          href={`/photography/${album.category.toLowerCase().replace(' ', '-')}/${album.id}`} 
+          href={`/photography/${album.category.toLowerCase().replace(/\s+/g, '-')}/${album.id}`} 
           key={album.id} 
           className="group block rounded-sm overflow-hidden bg-ink-900 border border-ink-700 hover:border-gold-400/40 transition-colors duration-400 relative"
         >

@@ -5,15 +5,17 @@ import { useRouter } from 'next/navigation';
 import AdminAlbums from '../../../components/admin/AdminAlbums';
 import AdminVideos from '../../../components/admin/AdminVideos';
 import AdminClients from '../../../components/admin/AdminClients';
+import AdminSettings from '../../../components/admin/AdminSettings';
 
 const TABS = [
+  { key: 'settings', label: 'Site content' },
   { key: 'albums', label: 'Photography albums' },
   { key: 'videos', label: 'Video' },
   { key: 'clients', label: 'Clients' },
 ];
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState('albums');
+  const [tab, setTab] = useState('settings');
   const router = useRouter();
 
   const logout = async () => {
@@ -52,6 +54,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {tab === 'settings' && <AdminSettings />}
       {tab === 'albums' && <AdminAlbums />}
       {tab === 'videos' && <AdminVideos />}
       {tab === 'clients' && <AdminClients />}

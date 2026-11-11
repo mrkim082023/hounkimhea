@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { uploadFile } from '../../lib/clientUpload';
 
 async function jsonFetch(url, opts) {
   const res = await fetch(url, opts);
@@ -57,15 +58,26 @@ export default function AdminAlbums() {
     }
   };
 
-  const uploadPhotos = async (albumId, files, caption) => {
-    const body = new FormData();
-    Array.from(files).forEach((f) => body.append('files', f));
-    body.append('caption', caption || '');
+  const uploadPhotos = async (albumId, files, caption, onProgress) => {
+    setError('');
+    const list = Array.from(files);
+    const urls = [];
     try {
-      await jsonFetch(`/api/albums/${albumId}/photos`, { method: 'POST', body });
+      for (let i = 0; i < list.length; i++) {
+        onProgress?.(`Uploading ${i + 1} of ${list.length}…`);
+        urls.push(await uploadFile(list[i], `albums/${albumId}`));
+      }
+      onProgress?.('Saving…');
+      await jsonFetch(`/api/albums/${albumId}/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls, caption: caption || '' }),
+      });
       await load();
     } catch (e) {
       setError(e.message);
+    } finally {
+      onProgress?.('');
     }
   };
 
@@ -155,7 +167,7 @@ export default function AdminAlbums() {
                     open={openId === album.id}
                     onToggle={() => setOpenId(openId === album.id ? null : album.id)}
                     onDelete={() => deleteAlbum(album.id)}
-                    onUpload={(files, caption) => uploadPhotos(album.id, files, caption)}
+                    onUpload={(files, caption, onProgress) => uploadPhotos(album.id, files, caption, onProgress)}
                     onDeletePhoto={(photoId) => deletePhoto(album.id, photoId)}
                   />
                 ))}
@@ -174,11 +186,12 @@ export default function AdminAlbums() {
 function AlbumRow({ album, open, onToggle, onDelete, onUpload, onDeletePhoto }) {
   const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState('');
 
   const handleFiles = async (e) => {
     if (!e.target.files.length) return;
     setUploading(true);
-    await onUpload(e.target.files, caption);
+    await onUpload(e.target.files, caption, setProgress);
     setUploading(false);
     setCaption('');
     e.target.value = '';
@@ -189,13 +202,15 @@ function AlbumRow({ album, open, onToggle, onDelete, onUpload, onDeletePhoto }) 
       <div className="flex items-center justify-between p-4">
         <button onClick={onToggle} className="flex items-center gap-4 text-left flex-1 min-w-0">
           <div className="w-14 h-14 rounded-sm bg-ink-800 overflow-hidden shrink-0">
-            {album.coverImage && (
-              <img src={album.coverImage} alt="" className="w-full h-full object-cover" />
+            {(album.displayCover || album.coverImage) && (
+              <img src={album.displayCover || album.coverImage} alt="" className="w-full h-full object-cover" />
             )}
           </div>
           <div className="min-w-0">
             <p className="text-bone truncate">{album.title}</p>
-            <p className="text-xs text-bone/40">{album.photos?.length || 0} photos</p>
+            <p className="text-xs text-bone/40">
+              {(album.folderPhotoCount || 0) + (album.photos?.length || 0)} photos
+            </p>
           </div>
         </button>
         <div className="flex items-center gap-3 shrink-0">
@@ -224,7 +239,7 @@ function AlbumRow({ album, open, onToggle, onDelete, onUpload, onDeletePhoto }) 
               className="flex-1 px-4 py-2.5 text-sm rounded-sm"
             />
             <label className="border border-gold-400/60 px-5 py-2.5 text-[12px] tracking-widest uppercase text-gold-200 hover:bg-gold-400 hover:text-ink-950 transition-colors duration-400 cursor-pointer text-center">
-              {uploading ? 'Uploading…' : 'Add photos'}
+              {uploading ? progress || 'Uploading…' : 'Add photos'}
               <input
                 type="file"
                 accept="image/*"
@@ -236,7 +251,14 @@ function AlbumRow({ album, open, onToggle, onDelete, onUpload, onDeletePhoto }) 
             </label>
           </div>
 
-          {album.photos.length > 0 && (
+          {album.folderPhotoCount > 0 && (
+            <p className="text-xs text-bone/40">
+              {album.folderPhotoCount} photos come from this album&apos;s original folder in the
+              website code and always show. Photos you add here appear after them.
+            </p>
+          )}
+
+          {album.photos?.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
               {album.photos.map((photo) => (
                 <div key={photo.id} className="relative group aspect-square rounded-sm overflow-hidden bg-ink-800">

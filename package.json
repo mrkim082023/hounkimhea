@@ -6,9 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "prebuild": "node scripts/build-manifest.js",
+    "predev": "node scripts/build-manifest.js"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "@vercel/blob": "^2.8.2",
     "framer-motion": "11.3.19",
     "fs-extra": "^11.4.0",
     "lenis": "^1.1.13",

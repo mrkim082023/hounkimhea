@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { uploadFile } from '../../lib/clientUpload';
 
 async function jsonFetch(url, opts) {
   const res = await fetch(url, opts);
@@ -9,13 +10,6 @@ async function jsonFetch(url, opts) {
   return data;
 }
 
-async function uploadFile(file, folder) {
-  const body = new FormData();
-  body.append('file', file);
-  body.append('folder', folder);
-  const data = await jsonFetch('/api/upload', { method: 'POST', body });
-  return data.url;
-}
 
 const SOURCE_OPTIONS = [
   { key: 'link', label: 'Link (YouTube / Facebook / Vimeo)' },
@@ -59,7 +53,7 @@ export default function AdminVideos() {
         videoUrl = await uploadFile(videoFile, 'videos');
       }
       let thumbnail = '';
-      if (thumbFile) thumbnail = await uploadFile(thumbFile, 'videos');
+      if (thumbFile) thumbnail = await uploadFile(thumbFile, 'video-thumbnails');
 
       await jsonFetch('/api/videos', {
         method: 'POST',

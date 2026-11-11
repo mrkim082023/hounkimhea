@@ -1,9 +1,9 @@
-import fs from 'fs';
-import path from 'path';
 import Link from 'next/link';
-import db from '../../data/db.json'; 
+import { readDb } from '../../lib/db';
+import { albumCover } from '../../lib/photos';
 
-export default function PhotographyPage() {
+export default async function PhotographyPage() {
+  const db = await readDb();
   // Find which categories actually have albums inside them
   const activeCategories = db.categories.filter(category => 
     db.albums.some(album => album.category === category)
@@ -13,35 +13,12 @@ export default function PhotographyPage() {
   const categoriesWithCovers = activeCategories.map(category => {
     // Find the first album in this category to steal its cover photo
     const firstAlbum = db.albums.find(album => album.category === category);
-    let coverImage = '/placeholder.jpg';
-    let totalAlbums = db.albums.filter(album => album.category === category).length;
-
-    if (firstAlbum) {
-      const publicUploadsPath = path.join(process.cwd(), 'public', 'uploads', firstAlbum.folderPath);
-      try {
-        if (fs.existsSync(publicUploadsPath)) {
-          const files = fs.readdirSync(publicUploadsPath);
-          const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-          const imageFiles = files.filter(file => 
-            imageExtensions.includes(path.extname(file).toLowerCase())
-          );
-          
-          const hasCover = imageFiles.some(f => f.toLowerCase().startsWith('cover.'));
-          if (hasCover) {
-            const coverFile = imageFiles.find(f => f.toLowerCase().startsWith('cover.'));
-            coverImage = `/uploads/${firstAlbum.folderPath}/${coverFile}`;
-          } else if (imageFiles.length > 0) {
-            coverImage = `/uploads/${firstAlbum.folderPath}/${imageFiles[0]}`;
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    const coverImage = firstAlbum ? albumCover(firstAlbum) : '/placeholder.jpg';
+    const totalAlbums = db.albums.filter(album => album.category === category).length;
 
     return {
       name: category,
-      slug: category.toLowerCase().replace(' ', '-'),
+      slug: category.toLowerCase().replace(/\s+/g, '-'),
       coverImage,
       totalAlbums
     };

@@ -12,7 +12,10 @@ const line = {
   }),
 };
 
-export default function Hero() {
+export default function Hero({
+  tagline = 'Photography & Filmmaking — Cambodia & beyond',
+  subtext = 'I photograph and film the moments people want to keep — weddings, events, and documentary stories, shot with patience and a quiet eye for light.',
+}) {
   return (
     <section className="relative min-h-[92vh] flex flex-col justify-center overflow-hidden grain">
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">

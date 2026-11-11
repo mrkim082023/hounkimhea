@@ -1,11 +1,11 @@
-import fs from 'fs';
-import path from 'path';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import db from '../../../../data/db.json'; 
+import { readDb } from '../../../../lib/db';
+import { albumPhotos } from '../../../../lib/photos';
 import AlbumGallery from '../../../../components/AlbumGallery';
 
-export default function AlbumPage({ params }) {
+export default async function AlbumPage({ params }) {
+  const db = await readDb();
   const { category, album: albumId } = params;
   const albumData = db.albums.find(a => a.id === albumId);
 
@@ -13,21 +13,7 @@ export default function AlbumPage({ params }) {
     return notFound();
   }
 
-  const publicUploadsPath = path.join(process.cwd(), 'public', 'uploads', albumData.folderPath);
-  let photos = [];
-
-  try {
-    if (fs.existsSync(publicUploadsPath)) {
-      const files = fs.readdirSync(publicUploadsPath);
-      const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-      const imageFiles = files.filter(file => 
-        imageExtensions.includes(path.extname(file).toLowerCase())
-      );
-      photos = imageFiles.map(file => `/uploads/${albumData.folderPath}/${file}`);
-    }
-  } catch (error) {
-    console.error("Error reading album folder files:", error);
-  }
+  const photos = albumPhotos(albumData);
 
   const fullAlbum = { ...albumData, photos };
 

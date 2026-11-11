@@ -4,8 +4,8 @@ import ClientLogos from '../../components/ClientLogos';
 
 export const metadata = { title: 'Clients — Houn Kimhea' };
 
-export default function ClientsPage() {
-  const db = readDb();
+export default async function ClientsPage() {
+  const db = await readDb();
   const withQuotes = db.clients.filter((c) => c.quote);
 
   return (

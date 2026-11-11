@@ -38,8 +38,8 @@ function thumbnailFor(video) {
   return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
 }
 
-export default function HomePage() {
-  const db = readDb();
+export default async function HomePage() {
+  const db = await readDb();
   const featured = db.albums.slice(0, 6);
 
   // Feature the latest couple of videos from each video category
@@ -50,7 +50,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <Hero />
+     <Hero tagline={db.settings.heroTagline} subtext={db.settings.heroSubtext} />
 
       <section className="mx-auto max-w-6xl px-6 md:px-10 py-24 md:py-32">
         <Reveal>

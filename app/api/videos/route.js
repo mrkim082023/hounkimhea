@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { readDb, writeDb, uid } from '../../../lib/db';
 
 export async function GET() {
-  const db = readDb();
+  const db = await readDb();
   return NextResponse.json({ videos: db.videos, videoCategories: db.videoCategories });
 }
 
@@ -17,7 +17,7 @@ export async function POST(request) {
     );
   }
 
-  const db = readDb();
+  const db = await readDb();
   if (!db.videoCategories.includes(category)) {
     return NextResponse.json({ error: 'Unknown video category.' }, { status: 400 });
   }
@@ -32,7 +32,7 @@ export async function POST(request) {
     createdAt: new Date().toISOString(),
   };
   db.videos.unshift(video);
-  writeDb(db);
+  await writeDb(db);
 
   return NextResponse.json({ video }, { status: 201 });
 }

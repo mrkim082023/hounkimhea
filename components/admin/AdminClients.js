@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { uploadFile } from '../../lib/clientUpload';
 
 async function jsonFetch(url, opts) {
   const res = await fetch(url, opts);
@@ -32,11 +33,7 @@ export default function AdminClients() {
     try {
       let logo = '';
       if (logoFile) {
-        const body = new FormData();
-        body.append('file', logoFile);
-        body.append('folder', 'clients');
-        const data = await jsonFetch('/api/upload', { method: 'POST', body });
-        logo = data.url;
+        logo = await uploadFile(logoFile, 'clients');
       }
       await jsonFetch('/api/clients', {
         method: 'POST',
