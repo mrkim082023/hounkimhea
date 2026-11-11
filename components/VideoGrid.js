@@ -7,7 +7,8 @@ import { lockScroll } from './SmoothScroll';
 import Portal from './Portal';
 import { embedUrl, videoKind, videoThumbnail } from '../lib/video';
 
-const isReel = (url = '') => /facebook\.com\/reel\//i.test(url);
+// Facebook's player shows reels in a wide frame, so every video uses a wide box.
+const isReel = () => false;
 
 function YouTubeFallbackImage({ src, alt }) {
   // maxresdefault doesn't exist for every YouTube video; fall back to hqdefault.
