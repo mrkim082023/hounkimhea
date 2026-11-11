@@ -343,7 +343,7 @@ export default function AdminAlbums() {
                 return (
                   <motion.div layout key={album.id}>
                     <Card className={open ? 'border-gold-400/40' : ''}>
-                      <div className="flex items-center gap-4 p-4">
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-4 p-4">
                         <MoveButtons index={i} total={inCat.length} onMove={(a, b) => reorderWithin(category, a, b)} />
                         <button onClick={() => setOpenId(open ? null : album.id)} className="flex items-center gap-4 text-left flex-1 min-w-0">
                           <div className="w-16 h-16 rounded-sm bg-ink-800 overflow-hidden shrink-0">
@@ -362,7 +362,7 @@ export default function AdminAlbums() {
                         >
                           ★
                         </button>
-                        <div className="flex gap-2 shrink-0">
+                        <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto justify-end">
                           <Button variant={open ? 'primary' : 'ghost'} onClick={() => setOpenId(open ? null : album.id)}>
                             {open ? 'Close' : 'Manage'}
                           </Button>

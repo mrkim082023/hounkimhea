@@ -21,7 +21,7 @@ function MilestoneCard({ item, onOpen, from }) {
       viewport={{ once: true, amount: 0.5 }}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       className={`group w-full text-left rounded-sm border border-ink-700 bg-ink-950/70 overflow-hidden transition-all duration-500 ${
-        clickable ? 'cursor-pointer hover:border-gold-400/50 hover:-translate-y-1 hover:shadow-[0_12px_40px_-12px_rgba(184,134,44,0.35)]' : 'cursor-default'
+        clickable ? 'cursor-pointer active:scale-[0.98] hover:border-gold-400/50 hover:-translate-y-1 hover:shadow-[0_12px_40px_-12px_rgba(184,134,44,0.35)]' : 'cursor-default'
       }`}
     >
       {photos[0] && (
@@ -149,10 +149,24 @@ export default function JourneyTimeline({ items }) {
               Journey &amp; <span className="gold-text italic">achievements</span>
             </h2>
           </div>
-          <p className="text-[11px] tracking-widest uppercase text-bone/30">Click a milestone to see more</p>
+          <p className="text-[11px] tracking-widest uppercase text-bone/30">Tap a milestone to see more</p>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-5">
+        {/* Phones: a simple vertical timeline */}
+        <div className="md:hidden relative pl-8">
+          <div className="absolute left-[6px] top-2 bottom-2 w-px bg-gradient-to-b from-gold-400 via-gold-500/60 to-ink-700" />
+          <div className="space-y-6">
+            {items.map((item, i) => (
+              <div key={i} className="relative">
+                <span className="absolute -left-8 top-5 w-[13px] h-[13px] rounded-full bg-gold-400 ring-4 ring-ink-950" />
+                <MilestoneCard item={item} from={16} onOpen={() => setOpen(item)} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tablets and computers: horizontal strip with arrows */}
+        <div className="hidden md:flex items-center gap-3 md:gap-5">
           <button
             type="button"
             onClick={() => scrollByAmount(-1)}

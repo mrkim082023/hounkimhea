@@ -222,7 +222,7 @@ export default function AdminArt() {
           return (
             <motion.div layout key={project.id}>
               <Card className={open ? 'border-gold-400/40' : ''}>
-                <div className="flex items-center gap-4 p-4">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 p-4">
                   <MoveButtons index={i} total={projects.length} onMove={reorder} />
                   <button type="button" onClick={() => setOpenId(open ? null : project.id)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
                     <div className="w-16 h-16 rounded-sm bg-ink-800 overflow-hidden shrink-0">
@@ -233,7 +233,7 @@ export default function AdminArt() {
                       <p className="text-xs text-bone/40">{[project.year, `${project.photos?.length || 0} photos`].filter(Boolean).join(' · ')}</p>
                     </div>
                   </button>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto justify-end">
                     <Button variant={open ? 'primary' : 'ghost'} onClick={() => setOpenId(open ? null : project.id)}>{open ? 'Close' : 'Edit'}</Button>
                     <ConfirmDelete
                       question="Delete project and its photos?"

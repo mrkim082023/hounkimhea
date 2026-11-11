@@ -135,7 +135,7 @@ export default function AdminClients() {
               {editing === client.id ? (
                 <ClientForm initial={{ ...EMPTY, ...client }} onSave={(f) => save(client.id, f)} onCancel={() => setEditing(null)} saveLabel="Save changes" />
               ) : (
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                   <MoveButtons index={i} total={clients.length} onMove={reorder} />
                   <div className="w-16 h-12 rounded-sm bg-bone/95 overflow-hidden shrink-0 flex items-center justify-center p-1">
                     {client.logo ? <img src={client.logo} alt="" className="max-w-full max-h-full object-contain" /> : <span className="text-ink-800 text-xs">No logo</span>}
@@ -144,7 +144,7 @@ export default function AdminClients() {
                     <p className="text-bone truncate">{client.name}</p>
                     {client.quote && <p className="text-xs text-bone/40 truncate">“{client.quote}”</p>}
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto justify-end">
                     <Button variant="ghost" onClick={() => setEditing(client.id)}>
                       Edit
                     </Button>

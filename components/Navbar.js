@@ -37,6 +37,10 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+    open ? window.__lenis?.stop() : window.__lenis?.start();
+  }, [open]);
 
   // The admin dashboard has its own top bar.
   if (pathname?.startsWith('/admin/')) return null;
@@ -104,13 +108,13 @@ export default function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.nav
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:hidden overflow-hidden bg-ink-950 hairline"
+            className="lg:hidden overflow-hidden bg-ink-950 hairline h-[calc(100dvh-5rem)]"
           >
-            <div className="flex flex-col px-6 py-6 gap-5">
+            <div className="flex flex-col px-6 py-10 gap-6">
               {LINKS.map((link, i) => (
                 <motion.div
                   key={link.href}
@@ -120,7 +124,7 @@ export default function Navbar() {
                 >
                   <Link
                     href={link.href}
-                    className="text-2xl font-display text-bone/90 hover:text-gold-300 transition-colors"
+                    className={`text-3xl font-display transition-colors ${pathname === link.href || pathname.startsWith(link.href + '/') ? 'text-gold-300' : 'text-bone/90 hover:text-gold-300'}`}
                   >
                     {link.label}
                   </Link>

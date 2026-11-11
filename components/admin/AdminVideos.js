@@ -243,7 +243,7 @@ export default function AdminVideos() {
                         saveLabel="Save changes"
                       />
                     ) : (
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                         <MoveButtons index={i} total={inCat.length} onMove={(a, b) => reorderWithin(category, a, b)} />
                         <div className="w-28 aspect-video rounded-sm bg-ink-800 overflow-hidden shrink-0">
                           {videoThumbnail(video) && <img src={videoThumbnail(video).replace('maxresdefault', 'hqdefault')} alt="" className="w-full h-full object-cover" />}
@@ -263,7 +263,7 @@ export default function AdminVideos() {
                         >
                           ★
                         </button>
-                        <div className="flex gap-2 shrink-0">
+                        <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto justify-end">
                           <Button variant="ghost" onClick={() => setEditing(video.id)}>
                             Edit
                           </Button>

@@ -242,7 +242,7 @@ export function ConfirmDelete({ onConfirm, label = 'Delete', question = 'Delete 
     );
   }
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="inline-flex flex-wrap items-center justify-end gap-2">
       <span className="text-xs text-red-200/80">{question}</span>
       <Button
         variant="danger"

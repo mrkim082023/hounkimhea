@@ -33,7 +33,7 @@ export default async function PhotographyPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {categories.map((cat, i) => (
             <Reveal key={cat.name} delay={(i % 2) * 0.12}>
-              <Link href={`/photography/${cat.slug}`} className="group block relative overflow-hidden rounded-sm">
+              <Link href={`/photography/${cat.slug}`} className="group block relative overflow-hidden rounded-sm active:scale-[0.985] transition-transform duration-200">
                 <FadeImage
                   src={cat.cover}
                   alt={cat.name}

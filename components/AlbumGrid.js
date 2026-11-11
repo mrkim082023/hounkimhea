@@ -21,7 +21,7 @@ export default function AlbumGrid({ albums }) {
         <Reveal key={album.id} delay={(i % 3) * 0.1}>
           <Link
             href={`/photography/${slugify(album.category)}/${album.id}`}
-            className="group block relative overflow-hidden rounded-sm"
+            className="group block relative overflow-hidden rounded-sm active:scale-[0.985] transition-transform duration-200"
           >
             <FadeImage
               src={album.cover}

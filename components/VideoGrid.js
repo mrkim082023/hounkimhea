@@ -90,7 +90,7 @@ export default function VideoGrid({ videos, categories = [], showFilters = false
                 exit={{ opacity: 0, scale: 0.96 }}
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.8, delay: (i % 2) * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="group relative block w-full overflow-hidden rounded-sm aspect-video bg-ink-800 text-left"
+                className="group relative block w-full overflow-hidden rounded-sm aspect-video bg-ink-800 text-left active:scale-[0.985]"
               >
                 {thumb ? (
                   thumb.includes('img.youtube.com') ? (
