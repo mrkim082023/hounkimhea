@@ -9,6 +9,36 @@ import { img } from '../lib/img';
 
 const photoUrls = (item) => (item.photos || []).map((p) => (typeof p === 'string' ? p : p.url)).filter(Boolean);
 
+// Top image of a milestone card. Milestones without a photo (or whose photo
+// can't load) get a matching gold placeholder, so every card looks the same.
+function CardImage({ src, year }) {
+  const [failed, setFailed] = useState(false);
+  if (src && !failed) {
+    return (
+      <div className="h-28 overflow-hidden bg-ink-800">
+        <img
+          src={img(src, 640)}
+          alt=""
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="relative h-28 overflow-hidden bg-gradient-to-br from-ink-800 via-ink-900 to-ink-800 flex items-center justify-center">
+      <svg viewBox="0 0 100 100" className="absolute w-36 h-36 text-gold-400/15" fill="none" stroke="currentColor" strokeWidth="1">
+        <circle cx="50" cy="50" r="40" />
+        {[0, 60, 120, 180, 240, 300].map((r) => (
+          <line key={r} x1="50" y1="10" x2="72" y2="48" transform={`rotate(${r} 50 50)`} />
+        ))}
+      </svg>
+      <span className="relative font-display text-4xl gold-text italic">{year}</span>
+    </div>
+  );
+}
+
 function MilestoneCard({ item, onOpen, from }) {
   const photos = photoUrls(item);
   const clickable = photos.length > 0 || !!item.description;
@@ -24,16 +54,7 @@ function MilestoneCard({ item, onOpen, from }) {
         clickable ? 'cursor-pointer active:scale-[0.98] hover:border-gold-400/50 hover:-translate-y-1 hover:shadow-[0_12px_40px_-12px_rgba(184,134,44,0.35)]' : 'cursor-default'
       }`}
     >
-      {photos[0] && (
-        <div className="h-24 overflow-hidden">
-          <img
-            src={img(photos[0], 640)}
-            alt=""
-            loading="lazy"
-            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
-          />
-        </div>
-      )}
+      <CardImage src={photos[0]} year={item.year} />
       <div className="px-5 py-4">
         <span className="text-sm font-semibold text-gold-400 tracking-wide">{item.year}</span>
         <h3 className="font-display text-lg text-bone mt-1 leading-snug">{item.title}</h3>
@@ -177,7 +198,7 @@ export default function JourneyTimeline({ items }) {
           </button>
 
           <div ref={scrollRef} data-lenis-prevent className="flex-1 min-w-0 overflow-x-auto pb-6 scroll-smooth [scrollbar-width:thin]">
-            <div className="relative flex items-center px-2 min-w-max min-h-[560px]">
+            <div className="relative flex items-center px-2 min-w-max min-h-[620px]">
               <div className="absolute left-2 right-2 top-1/2 -translate-y-1/2 h-px bg-ink-700" />
               <motion.div
                 initial={{ scaleX: 0 }}
@@ -191,7 +212,7 @@ export default function JourneyTimeline({ items }) {
                 {items.map((item, i) => {
                   const above = i % 2 === 0;
                   return (
-                    <div key={i} className="relative w-56 md:w-64 h-[540px] flex flex-col items-center justify-center">
+                    <div key={i} className="relative w-56 md:w-64 h-[600px] flex flex-col items-center justify-center">
                       <div className={`absolute left-0 right-0 flex flex-col items-center ${above ? 'bottom-1/2 pb-0' : 'top-1/2'}`}>
                         {above ? (
                           <>
