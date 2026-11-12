@@ -53,10 +53,10 @@ export default async function HomePage() {
       {featuredVideos.length > 0 && (
         <section className="hairline border-t border-ink-700 bg-ink-900/40">
           <div className="mx-auto max-w-6xl px-6 md:px-10 py-24 md:py-32">
-            <SectionHeader eyebrow="On film" title="Featured" accent="films" href="/video" linkLabel="View all" />
+            <SectionHeader eyebrow="On film" title="Video" accent="projects" href="/video" linkLabel="View all" />
             <VideoGrid videos={featuredVideos} />
             <Link href="/video" className="md:hidden mt-10 inline-block text-[13px] tracking-widest uppercase text-bone/60 hover:text-gold-300">
-              View all films &#8594;
+              View all videos &#8594;
             </Link>
           </div>
         </section>
