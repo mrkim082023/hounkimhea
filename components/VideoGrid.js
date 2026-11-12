@@ -161,7 +161,22 @@ export default function VideoGrid({ videos, categories = [], showFilters = false
                   isReel(active.videoUrl) ? 'aspect-[9/16]' : 'aspect-video'
                 }`}
               >
-                {videoKind(active.videoUrl) === 'file' ? (
+                {/facebook\.com\/share\/|fb\.watch\//i.test(active.videoUrl) ? (
+                  <a
+                    href={active.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative w-full h-full flex flex-col items-center justify-center gap-4"
+                  >
+                    {videoThumbnail(active) && (
+                      <img src={videoThumbnail(active)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                    )}
+                    <span className="relative w-20 h-20 rounded-full bg-gold-400 flex items-center justify-center transition-transform group-hover:scale-110">
+                      <span className="w-0 h-0 border-y-[10px] border-y-transparent border-l-[17px] border-l-ink-950 ml-1" />
+                    </span>
+                    <span className="relative text-[12px] tracking-widest uppercase text-bone">Watch on Facebook &#8599;</span>
+                  </a>
+                ) : videoKind(active.videoUrl) === 'file' ? (
                   <video src={active.videoUrl} controls autoPlay playsInline className="w-full h-full" />
                 ) : embedUrl(active.videoUrl) ? (
                   <iframe

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { uploadFile } from '../../lib/clientUpload';
 import { videoKind, videoThumbnail } from '../../lib/video';
+
+const isShareLink = (u = '') => /facebook\.com\/share\/|fb\.watch\//i.test(u);
 import {
   api, Button, Card, ConfirmDelete, ImagePicker, Input, Label, MoveButtons, SectionTitle, Select, Textarea, Toggle, move, useToast,
 } from './ui';
@@ -149,6 +151,10 @@ export default function AdminVideos() {
       .catch((e) => toast(e.message, 'error'));
   useEffect(() => {
     load();
+    // Try again to make any Facebook share links playable.
+    api('/api/videos/fix-facebook', { method: 'POST' })
+      .then((r) => r.fixed > 0 && (toast(`${r.fixed} Facebook link${r.fixed > 1 ? 's' : ''} fixed.`), load()))
+      .catch(() => {});
   }, []);
 
   const create = async (form) => {
@@ -250,6 +256,11 @@ export default function AdminVideos() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-bone truncate">{video.title}</p>
+                          {isShareLink(video.videoUrl) && (
+                            <p className="text-[11px] text-amber-300/90">
+                              ⚠ Facebook “share” link — may not play on your site. Open the video on Facebook, copy the address from the browser bar (…/reel/123… or …/videos/123…), click Edit and paste it.
+                            </p>
+                          )}
                           <p className="text-xs text-bone/40 truncate">
                             {{ youtube: 'YouTube', facebook: 'Facebook', vimeo: 'Vimeo', file: 'Uploaded file', link: 'Link' }[videoKind(video.videoUrl)]}
                             {video.description ? ` · ${video.description}` : ''}
