@@ -1,11 +1,11 @@
-import { readDb } from '../../lib/db';
+import { getSiteData } from '../../lib/db';
 import Reveal from '../../components/Reveal';
 import ContactForm from '../../components/ContactForm';
 
 export const metadata = { title: 'Contact — Houn Kimhea' };
 
 export default async function ContactPage() {
-  const db = await readDb();
+  const db = await getSiteData();
   const { settings } = db;
 
   return (

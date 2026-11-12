@@ -1,18 +1,24 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { readDb } from '../../../lib/db';
+import { getSiteData } from '../../../lib/db';
 import { findCategoryBySlug } from '../../../lib/slug';
 import Reveal from '../../../components/Reveal';
 import VideoGrid from '../../../components/VideoGrid';
 
+
+export async function generateStaticParams() {
+  const db = await getSiteData();
+  return db.videoCategories.map((c) => ({ category: c.toLowerCase().replace(/\s+/g, '-') }));
+}
+
 export async function generateMetadata({ params }) {
-  const db = await readDb();
+  const db = await getSiteData();
   const category = findCategoryBySlug(db.videoCategories, params.category);
   return { title: category ? `${category} — Houn Kimhea` : 'Video' };
 }
 
 export default async function VideoCategoryPage({ params }) {
-  const db = await readDb();
+  const db = await getSiteData();
   const category = findCategoryBySlug(db.videoCategories, params.category);
   if (!category) notFound();
 

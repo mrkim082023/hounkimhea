@@ -1,11 +1,11 @@
-import { readDb } from '../../lib/db';
+import { getSiteData } from '../../lib/db';
 import Reveal from '../../components/Reveal';
 import VideoGrid from '../../components/VideoGrid';
 
 export const metadata = { title: 'Video Portfolio — Houn Kimhea' };
 
 export default async function VideoPage() {
-  const db = await readDb();
+  const db = await getSiteData();
 
   return (
     <div className="mx-auto max-w-6xl px-6 md:px-10 py-28 md:py-36 min-h-screen">

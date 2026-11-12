@@ -1,19 +1,25 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { readDb } from '../../../../lib/db';
+import { getSiteData } from '../../../../lib/db';
 import { albumPhotos } from '../../../../lib/photos';
 import { slugify } from '../../../../lib/slug';
 import Reveal from '../../../../components/Reveal';
 import AlbumGallery from '../../../../components/AlbumGallery';
 
+
+export async function generateStaticParams() {
+  const db = await getSiteData();
+  return db.albums.map((a) => ({ category: slugify(a.category), album: a.id }));
+}
+
 export async function generateMetadata({ params }) {
-  const db = await readDb();
+  const db = await getSiteData();
   const album = db.albums.find((a) => a.id === params.album);
   return { title: album ? `${album.title} — Houn Kimhea` : 'Album' };
 }
 
 export default async function AlbumPage({ params }) {
-  const db = await readDb();
+  const db = await getSiteData();
   const album = db.albums.find((a) => a.id === params.album);
   if (!album) notFound();
 

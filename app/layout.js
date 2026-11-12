@@ -4,12 +4,11 @@ import Footer from '../components/Footer';
 import PageTransition from '../components/PageTransition';
 import SmoothScroll from '../components/SmoothScroll';
 import ScrollProgress from '../components/ScrollProgress';
+import NavProgress from '../components/NavProgress';
 
-// Content is edited live through /admin, so every page must render fresh on
-// each visit — never from a cached copy — or admin edits wouldn't show up.
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
+// Pages are prepared ahead of time so they open instantly. Whenever something
+// is saved in /admin, they are rebuilt automatically (see lib/db.js).
+export const revalidate = 3600;
 
 export const metadata = {
   title: 'Houn Kimhea — Photography & Videography',
@@ -23,6 +22,7 @@ export default function RootLayout({ children }) {
       <body className="font-body bg-ink-950 text-bone antialiased">
         <SmoothScroll />
         <ScrollProgress />
+        <NavProgress />
         <Navbar />
         <main className="min-h-screen pt-20">
           <PageTransition>{children}</PageTransition>

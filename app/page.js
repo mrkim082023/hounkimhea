@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { readDb } from '../lib/db';
+import { getSiteData } from '../lib/db';
 import Reveal from '../components/Reveal';
 import Hero from '../components/Hero';
 import AlbumGrid from '../components/AlbumGrid';
@@ -29,7 +29,7 @@ function SectionHeader({ eyebrow, title, accent, href, linkLabel }) {
 }
 
 export default async function HomePage() {
-  const db = await readDb();
+  const db = await getSiteData();
 
   // Items starred in the admin panel come first, then the most recent ones fill the rest.
   const pick = (items, max) => [...items.filter((i) => i.featured), ...items.filter((i) => !i.featured)].slice(0, max);

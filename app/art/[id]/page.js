@@ -1,20 +1,26 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { readDb } from '../../../lib/db';
+import { getSiteData } from '../../../lib/db';
 import Reveal from '../../../components/Reveal';
 import FadeImage from '../../../components/FadeImage';
 import AlbumGallery from '../../../components/AlbumGallery';
 
 const paragraphs = (text = '') => text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
+
+export async function generateStaticParams() {
+  const db = await getSiteData();
+  return (db.art?.projects || []).map((p) => ({ id: p.id }));
+}
+
 export async function generateMetadata({ params }) {
-  const db = await readDb();
+  const db = await getSiteData();
   const p = db.art.projects.find((x) => x.id === params.id);
   return { title: p ? `${p.title} — Houn Kimhea` : 'Contemporary Art' };
 }
 
 export default async function ArtProjectPage({ params }) {
-  const db = await readDb();
+  const db = await getSiteData();
   const projects = db.art.projects;
   const idx = projects.findIndex((x) => x.id === params.id);
   if (idx === -1) notFound();

@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { readDb } from '../lib/db';
+import { getSiteData } from '../lib/db';
 
 export default async function Footer() {
-  const db = await readDb();
+  const db = await getSiteData();
   const socialLinks = (db.settings?.socialLinks || []).filter((s) => s.url);
 
   return (

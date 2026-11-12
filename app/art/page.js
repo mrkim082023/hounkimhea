@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { readDb } from '../../lib/db';
+import { getSiteData } from '../../lib/db';
 import Reveal from '../../components/Reveal';
 import FadeImage from '../../components/FadeImage';
 
@@ -8,7 +8,7 @@ export const metadata = { title: 'Contemporary Art — Houn Kimhea' };
 const paragraphs = (text = '') => text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
 export default async function ArtPage() {
-  const db = await readDb();
+  const db = await getSiteData();
   const { art } = db;
   const projects = art.projects || [];
 

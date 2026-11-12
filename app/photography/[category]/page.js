@@ -1,18 +1,24 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { readDb } from '../../../lib/db';
-import { findCategoryBySlug } from '../../../lib/slug';
+import { getSiteData } from '../../../lib/db';
+import { findCategoryBySlug, slugify } from '../../../lib/slug';
 import Reveal from '../../../components/Reveal';
 import AlbumGrid from '../../../components/AlbumGrid';
 
+
+export async function generateStaticParams() {
+  const db = await getSiteData();
+  return db.categories.map((c) => ({ category: slugify(c) }));
+}
+
 export async function generateMetadata({ params }) {
-  const db = await readDb();
+  const db = await getSiteData();
   const category = findCategoryBySlug(db.categories, params.category);
   return { title: category ? `${category} — Houn Kimhea` : 'Photography' };
 }
 
 export default async function CategoryPage({ params }) {
-  const db = await readDb();
+  const db = await getSiteData();
   const category = findCategoryBySlug(db.categories, params.category);
   if (!category) notFound();
 

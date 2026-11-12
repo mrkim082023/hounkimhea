@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { readDb } from '../../lib/db';
+import { getSiteData } from '../../lib/db';
 import { albumCover } from '../../lib/photos';
 import { slugify } from '../../lib/slug';
 import Reveal from '../../components/Reveal';
@@ -8,7 +8,7 @@ import FadeImage from '../../components/FadeImage';
 export const metadata = { title: 'Photography — Houn Kimhea' };
 
 export default async function PhotographyPage() {
-  const db = await readDb();
+  const db = await getSiteData();
   const categories = db.categories
     .map((category) => {
       const albums = db.albums.filter((a) => a.category === category);

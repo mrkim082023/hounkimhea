@@ -1,11 +1,11 @@
-import { readDb } from '../../lib/db';
+import { getSiteData } from '../../lib/db';
 import Reveal from '../../components/Reveal';
 import ClientLogos from '../../components/ClientLogos';
 
 export const metadata = { title: 'Clients — Houn Kimhea' };
 
 export default async function ClientsPage() {
-  const db = await readDb();
+  const db = await getSiteData();
   const withQuotes = db.clients.filter((c) => c.quote);
 
   return (

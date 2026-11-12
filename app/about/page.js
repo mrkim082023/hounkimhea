@@ -1,4 +1,4 @@
-import { readDb } from '../../lib/db';
+import { getSiteData } from '../../lib/db';
 import Reveal from '../../components/Reveal';
 import FadeImage from '../../components/FadeImage';
 import JourneyTimeline from '../../components/JourneyTimeline';
@@ -6,7 +6,7 @@ import JourneyTimeline from '../../components/JourneyTimeline';
 export const metadata = { title: 'About — Houn Kimhea' };
 
 export default async function AboutPage() {
-  const db = await readDb();
+  const db = await getSiteData();
   const { settings } = db;
   const bioParagraphs = settings.aboutBio.split(/\n\s*\n/).filter(Boolean);
 
