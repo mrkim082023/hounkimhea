@@ -8,7 +8,8 @@ import NavProgress from '../components/NavProgress';
 
 // Pages are prepared ahead of time so they open instantly. Whenever something
 // is saved in /admin, they are rebuilt automatically (see lib/db.js).
-export const revalidate = 3600;
+// As a safety net, pages also refresh themselves at least once a minute.
+export const revalidate = 60;
 
 export const metadata = {
   title: 'Houn Kimhea — Photography & Videography',

@@ -11,7 +11,7 @@ function PhotoStrip({ photos, onChange }) {
   const [progress, setProgress] = useState('');
   const ref = useRef(null);
   const add = async (files) => {
-    const list = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const list = Array.from(files).filter((f) => f.type.startsWith('image/') || /\.hei[cf]$/i.test(f.name));
     const added = [];
     try {
       for (let i = 0; i < list.length; i++) {
@@ -48,7 +48,7 @@ function PhotoStrip({ photos, onChange }) {
         >
           {progress || '+ Add photos'}
         </button>
-        <input ref={ref} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { add(e.target.files); e.target.value = ''; }} />
+        <input ref={ref} type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={(e) => { add(e.target.files); e.target.value = ''; }} />
       </div>
     </div>
   );

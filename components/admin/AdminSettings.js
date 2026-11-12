@@ -144,7 +144,7 @@ export default function AdminSettings() {
             </div>
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif"
               onChange={(e) => setAboutPhotoFile(e.target.files[0])}
               className="text-sm text-bone/60"
             />

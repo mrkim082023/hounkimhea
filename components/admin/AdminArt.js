@@ -14,7 +14,7 @@ function ArtworkPhotos({ photos, onChange }) {
   const toast = useToast();
 
   const add = async (files) => {
-    const list = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const list = Array.from(files).filter((f) => f.type.startsWith('image/') || /\.hei[cf]$/i.test(f.name));
     if (!list.length) return;
     const added = [];
     try {
@@ -43,7 +43,7 @@ function ArtworkPhotos({ photos, onChange }) {
       >
         <p className="text-gold-200 text-sm">{progress || 'Drop artwork photos here, or click to choose'}</p>
         <p className="text-xs text-bone/30 mt-1">The first photo is the cover.</p>
-        <input ref={ref} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { add(e.target.files); e.target.value = ''; }} />
+        <input ref={ref} type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={(e) => { add(e.target.files); e.target.value = ''; }} />
       </div>
       {photos.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">

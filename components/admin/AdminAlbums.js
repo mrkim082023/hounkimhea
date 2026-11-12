@@ -79,7 +79,7 @@ function AlbumEditor({ album, categories, reload, onClose }) {
   };
 
   const upload = async (files) => {
-    const list = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const list = Array.from(files).filter((f) => f.type.startsWith('image/') || /\.hei[cf]$/i.test(f.name));
     if (!list.length) return;
     const urls = [];
     try {
@@ -184,7 +184,7 @@ function AlbumEditor({ album, categories, reload, onClose }) {
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             multiple
             className="hidden"
             onChange={(e) => {

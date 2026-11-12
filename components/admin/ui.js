@@ -224,7 +224,7 @@ export function ImagePicker({ value, onChange, folder, label = 'Image', aspect =
             </button>
           )}
         </div>
-        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={pick} />
+        <input ref={inputRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={pick} />
       </div>
     </div>
   );
